@@ -1,3 +1,8 @@
+2014-10-01  MIZUNUMA Yuto  <mizmiz@sf.net>
+
+	* navi2ch-thumbnail.el (navi2ch-thumbnail-show-image):
+	emacs22以前のimage-type-from-file-headerは貧弱なので使わない
+
 2014-07-16  MIZUNUMA Yuto  <mizmiz@sf.net>
 
 	* navi2ch-net.el (navi2ch-net-send-request): https -> https://

@@ -408,13 +408,15 @@
 				       (list (cons "Referer" referer))))
 	(unless (file-exists-p file)
 	  (error "ファイルがありません %s" file))
-	(unless (image-type-from-file-header file)
-	  (let (buffer-error)
-	    (with-temp-buffer
-	      (insert-file-contents file nil 0 500)
-	      (setq buffer-error (buffer-string)))
-	    (delete-file file)
-	    (error "画像ファイルではありません %s %s" file buffer-error)))
+        ;; emacs22 image identify is poor 
+        (when (>= emacs-major-version 23)
+          (unless (image-type-from-file-header file)
+            (let (buffer-error)
+              (with-temp-buffer
+                (insert-file-contents file nil 0 500)
+                (setq buffer-error (buffer-string)))
+              (delete-file file)
+              (error "画像ファイルではありません %s %s" file buffer-error))))
 	(setq filename (file-name-nondirectory file))
 	(setq image-attr (navi2ch-thumbnail-image-identify file))
 	(if (not image-attr)
