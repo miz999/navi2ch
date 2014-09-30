@@ -2,6 +2,7 @@
 
 	* navi2ch-thumbnail.el (navi2ch-thumbnail-show-image):
 	emacs22以前のimage-type-from-file-headerは貧弱なので使わない
+	(navi2ch-thumbnail-twitpic): httpsを使うこともあるようだ
 
 2014-07-16  MIZUNUMA Yuto  <mizmiz@sf.net>
 
