@@ -1,3 +1,9 @@
+2014-10-14  MIZUNUMA Yuto  <mizmiz@sf.net>
+
+	* navi2ch-thumbnail.el (navi2ch-thumbnail-imepic):
+	image server changed img1 -> img3.将来の一桁サーバ名にも対応
+	delete comment
+
 2014-10-01  MIZUNUMA Yuto  <mizmiz@sf.net>
 
 	* navi2ch-thumbnail.el (navi2ch-thumbnail-show-image):
