@@ -356,7 +356,7 @@
 		(previous-single-property-change (point) 'current-number)))
 	 (end (next-single-property-change
 	       (if prop (1+ (point)) (point))
-	       'current-number)))
+	       'current-number nil (point-max))))
     (navi2ch-thumbnail-image-show-region
      (if beg (max (1- beg) (point-min)) (point-min))
      end)))

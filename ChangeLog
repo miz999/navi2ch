@@ -1,3 +1,9 @@
+2014-10-21  MIZUNUMA Yuto  <mizmiz@sf.net>
+
+	* navi2ch-thumbnail.el (navi2ch-thumbnail-all-show):
+	最終レスの場合、変化点が検出できずに範囲のendにnilが入るバグの修正。
+	next-single-property-changeのoption引数で対応
+
 2014-10-14  MIZUNUMA Yuto  <mizmiz@sf.net>
 
 	* navi2ch-thumbnail.el (navi2ch-thumbnail-imepic):
