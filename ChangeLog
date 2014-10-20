@@ -1,3 +1,8 @@
+2014-10-22  MIZUNUMA Yuto  <mizmiz@sf.net>
+
+	* navi2ch-thumbnail.el (navi2ch-thumbnail-twitter):
+	twitpicという変数名が分かりづらいので修正(twitpicは厳密にはtwitterとは関係ない画像サービス)
+
 2014-10-21  MIZUNUMA Yuto  <mizmiz@sf.net>
 
 	* navi2ch-thumbnail.el (navi2ch-thumbnail-all-show):

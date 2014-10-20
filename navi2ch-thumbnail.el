@@ -129,7 +129,7 @@
         ;; http://imepic.jp/20111231/11111 ->
         ;; http://img1.imepic.jp/image/20111231/11111.jpg?550e3768ff8455488ae8d5582f55db6d
         ("h?ttp://imepic\\.jp/\\([0-9/]+\\)" ".jpg" navi2ch-thumbnail-imepic "http://img1.imepic.jp/image/")
-        ("h?t?tps?://twitter.com/.+/status/[0-9]+/photo/1" ".jpg" navi2ch-thumbnail-twitpic nil)
+        ("h?t?tps?://twitter.com/.+/status/[0-9]+/photo/1" ".jpg" navi2ch-thumbnail-twitter nil)
   )
       "リスト構造
   0:対象URL正規表現
@@ -186,15 +186,15 @@
       (error "can't get image url from %s" url)))
   img-url)
 
-(defun navi2ch-thumbnail-twitpic (url &optional dummy0 dummy1)
-  "twitpicの場合の画像を取得"
+(defun navi2ch-thumbnail-twitter (url &optional dummy0 dummy1)
+  "twitter画像の場合の画像を取得"
   (let ((proc (navi2ch-net-send-request
                url
                "GET"))
         cont)
     (setq cont (navi2ch-net-get-content proc))
     (if (string-match "src=\"\\(https?://pbs\.twimg\.com/media/.+\.jpg\\)\"" cont)
-        (setq twitpic-img (match-string 1 cont))
+        (setq twitter-img (match-string 1 cont))
       (error "can't get image url from %s" url))))
 
 ;;articleから画像らしきリンクを探すregexを1行にまとめる
