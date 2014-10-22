@@ -710,26 +710,27 @@
 
       ;; それでも無理なら外部プログラムに頼る
       (when navi2ch-thumbnail-image-identify-program
-	(message "identify called %s" file)
+;	(message "identify called %s" file)
 	(with-temp-buffer
           (cond
            (navi2ch-thumbnail-use-mac-sips
 	    (let (width height)
-	      (call-process 'sips' nil t nil "-g" "-all" file)
-	      (when (re-search-forward
-		     "pixelWidth: \\([0-9]+\\)")
-		(setq width (string-to-number (match-string 1))))
-	      (when (re-search-forward
-		     "pixelHeight: \\([0-9]+\\)")
-		(setq height (string-to-number (match-string 1))))
-	      ;;anime gifはあきらめる
-              (list width height nil)))
+	      (call-process "sips" nil t nil "-g" "all" file)
+	      (cond ((re-search-forward "Error: \\(.+\\)" nil t)
+                     (message "sips ERROR: %s" (match-string 1))
+                     nil)
+                    ((re-search-forward "pixelWidth: \\([0-9]+\\)" nil t)
+                     (setq width (string-to-number (match-string 1)))
+                     (re-search-forward "pixelHeight: \\([0-9]+\\)")
+                     (setq height (string-to-number (match-string 1)))
+                    ;;anime gifはあきらめる
+                     (list width height nil)))))
            (t
             (call-process navi2ch-thumbnail-image-identify-program nil t nil
                           "-quiet" "-format" "\"%n %w %h %b\"" file)
             (goto-char (point-min))
             (when (re-search-forward
-                   "\\([0-9]+\\) \\([0-9]+\\) \\([0-9]+\\) \\([0-9]+\\)")
+                   "\\([0-9]+\\) \\([0-9]+\\) \\([0-9]+\\) \\([0-9]+\\)" nil t)
               (list (string-to-number (match-string 2))
                     (string-to-number (match-string 3))
                     (> (string-to-number (match-string 1)) 1))))))))))
