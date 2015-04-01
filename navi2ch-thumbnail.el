@@ -193,7 +193,7 @@
                "GET"))
         cont)
     (setq cont (navi2ch-net-get-content proc))
-    (if (string-match "src=\"\\(http://pbs\.twimg\.com/media/.+\.jpg\\)\"" cont)
+    (if (string-match "src=\"\\(https?://pbs\.twimg\.com/media/.+\.jpg\\)\"" cont)
         (setq twitpic-img (match-string 1 cont))
       (error "can't get image url from %s" url))))
 
@@ -731,3 +731,4 @@
               (list (string-to-number (match-string 2))
                     (string-to-number (match-string 3))
                     (> (string-to-number (match-string 1)) 1))))))))))
+;;; navi2ch-thumbnail.el ends here
