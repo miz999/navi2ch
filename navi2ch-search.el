@@ -331,13 +331,13 @@
 (defvar navi2ch-search-web-total-hit 0
   "検索総ヒット数")
 
-;; find.2ch.net is dead
+;; find.2ch.net は本文検索サイトになった
 ;(defvar navi2ch-search-web-search-method 'navi2ch-search-find-2ch-method)
 
-;; hula search is case sensitive
+;; h.ula.cc  case sensitive
 ;(defvar navi2ch-search-web-search-method 'navi2ch-search-hula-method)
 
-;; dig will be a standard?
+;; dig.2ch.net 公式?
 (defvar navi2ch-search-web-search-method 'navi2ch-search-dig-method)
 
 (defsubst navi2ch-search-web-method ()
@@ -398,71 +398,71 @@
       (list (navi2ch-board-url-to-board url) subject artid response))))
 
 ;;; navi2ch find.2ch.net
-(defvar navi2ch-search-find-2ch-method
-    '(navi2ch-search-find-2ch-subject-list
-      navi2ch-search-find-2ch-next
-      navi2ch-search-find-2ch-previous))
-(defvar navi2ch-search-find-2ch-last-search-num nil)
-(defvar navi2ch-search-find-2ch-search-num 30
-  "一度に表示する検索結果
-find.2ch.net の仕様上、最大は50件")
-(defvar navi2ch-search-find-2ch-coding 'euc-japan-dos
-  "find.2ch.net で使われるコーディング")
-(defconst navi2ch-search-find-2ch-thread-regexp
-  "<dt><a href=\"\\(http://[-a-zA-Z0-9_.!~*';/?:@&=+$,%#]+\\)\">\\(.*\\)</a> (\\([0-9]+\\)) - <font size=[-0-9]+><a href=.+/>\\(.+\\)板</a>.+</font></dt><dd>"
-  "find.2ch.net で検索する regexp")
+;; (defvar navi2ch-search-find-2ch-method
+;;     '(navi2ch-search-find-2ch-subject-list
+;;       navi2ch-search-find-2ch-next
+;;       navi2ch-search-find-2ch-previous))
+;; (defvar navi2ch-search-find-2ch-last-search-num nil)
+;; (defvar navi2ch-search-find-2ch-search-num 30
+;;   "一度に表示する検索結果
+;; find.2ch.net の仕様上、最大は50件")
+;; (defvar navi2ch-search-find-2ch-coding 'euc-japan-dos
+;;   "find.2ch.net で使われるコーディング")
+;; (defconst navi2ch-search-find-2ch-thread-regexp
+;;   "<dt><a href=\"\\(http://[-a-zA-Z0-9_.!~*';/?:@&=+$,%#]+\\)\">\\(.*\\)</a> (\\([0-9]+\\)) - <font size=[-0-9]+><a href=.+/>\\(.+\\)板</a>.+</font></dt><dd>"
+;;   "find.2ch.net で検索する regexp")
 
-(defun navi2ch-search-find-2ch-subject-list (query offset)
-  "find.2ch.net に文字列 `query' でリクエスト。
-`offset' は「次の10件」とか表示させたいときに使う。"
-  (setq offset
-        (if offset
-            (+ (or navi2ch-search-find-2ch-last-search-num 0) offset)
-          0))
-  (setq navi2ch-search-find-2ch-last-search-num offset)
-  (let* ((query (navi2ch-url-encode-string query 
-                                           navi2ch-search-find-2ch-coding t))
-         ;; 意味も分からず使ってるパラメータ多し。内部仕様が分かり次第改善予定
-         (url (format
-               "http://find.2ch.net/?STR=%s&SCEND=A&SORT=MODIFIED&COUNT=%s&TYPE=TITLE&BBS=ALL&OFFSET=%s" 
-               query navi2ch-search-find-2ch-search-num offset))
-         (proc (navi2ch-net-download-file url))
-         (cont (decode-coding-string (navi2ch-net-get-content proc)
-                                     navi2ch-search-find-2ch-coding))
-         subject-list)
-    (with-temp-buffer
-      (insert cont)
-      (goto-char (point-min))
-      ;; まず総ヒット件数を探す
-      (if (re-search-forward "<font color=white size=-1>\\([0-9]+\\)スレ中.*秒</font>" nil t)
-	  (progn
-	    (setq navi2ch-search-web-total-hit (string-to-number (match-string 1)))
-	    (while (re-search-forward 
-		    navi2ch-search-find-2ch-thread-regexp
-		    nil t)
-	      (let ((url (match-string 1))
-		    (title (navi2ch-replace-html-tag (match-string 2)))
-		    (num  (match-string 3)))
-		(push (navi2ch-search-web-make-list url title num)
-		      subject-list))))
-	(setq navi2ch-search-web-total-hit 0)
-	(message "No match")))
-    (setq navi2ch-search-web-current-start
-	  (min (1+ navi2ch-search-find-2ch-last-search-num)
-	       navi2ch-search-web-total-hit)
-	  navi2ch-search-web-current-end
-	  (min (+ navi2ch-search-find-2ch-last-search-num 
-		  (min navi2ch-search-find-2ch-search-num 50))
-	       navi2ch-search-web-total-hit))
-    (nreverse subject-list)))
+;; (defun navi2ch-search-find-2ch-subject-list (query offset)
+;;   "find.2ch.net に文字列 `query' でリクエスト。
+;; `offset' は「次の10件」とか表示させたいときに使う。"
+;;   (setq offset
+;;         (if offset
+;;             (+ (or navi2ch-search-find-2ch-last-search-num 0) offset)
+;;           0))
+;;   (setq navi2ch-search-find-2ch-last-search-num offset)
+;;   (let* ((query (navi2ch-url-encode-string query 
+;;                                            navi2ch-search-find-2ch-coding t))
+;;          ;; 意味も分からず使ってるパラメータ多し。内部仕様が分かり次第改善予定
+;;          (url (format
+;;                "http://find.2ch.net/?STR=%s&SCEND=A&SORT=MODIFIED&COUNT=%s&TYPE=TITLE&BBS=ALL&OFFSET=%s" 
+;;                query navi2ch-search-find-2ch-search-num offset))
+;;          (proc (navi2ch-net-download-file url))
+;;          (cont (decode-coding-string (navi2ch-net-get-content proc)
+;;                                      navi2ch-search-find-2ch-coding))
+;;          subject-list)
+;;     (with-temp-buffer
+;;       (insert cont)
+;;       (goto-char (point-min))
+;;       ;; まず総ヒット件数を探す
+;;       (if (re-search-forward "<font color=white size=-1>\\([0-9]+\\)スレ中.*秒</font>" nil t)
+;; 	  (progn
+;; 	    (setq navi2ch-search-web-total-hit (string-to-number (match-string 1)))
+;; 	    (while (re-search-forward 
+;; 		    navi2ch-search-find-2ch-thread-regexp
+;; 		    nil t)
+;; 	      (let ((url (match-string 1))
+;; 		    (title (navi2ch-replace-html-tag (match-string 2)))
+;; 		    (num  (match-string 3)))
+;; 		(push (navi2ch-search-web-make-list url title num)
+;; 		      subject-list))))
+;; 	(setq navi2ch-search-web-total-hit 0)
+;; 	(message "No match")))
+;;     (setq navi2ch-search-web-current-start
+;; 	  (min (1+ navi2ch-search-find-2ch-last-search-num)
+;; 	       navi2ch-search-web-total-hit)
+;; 	  navi2ch-search-web-current-end
+;; 	  (min (+ navi2ch-search-find-2ch-last-search-num 
+;; 		  (min navi2ch-search-find-2ch-search-num 50))
+;; 	       navi2ch-search-web-total-hit))
+;;     (nreverse subject-list)))
 
-;; 次のページ
-(defun navi2ch-search-find-2ch-next ()
-   (min navi2ch-search-find-2ch-search-num 50))
+;; ;; 次のページ
+;; (defun navi2ch-search-find-2ch-next ()
+;;    (min navi2ch-search-find-2ch-search-num 50))
 
-;; 前のページ
-(defun navi2ch-search-find-2ch-previous ()
-  (- (min navi2ch-search-find-2ch-search-num 50)))
+;; ;; 前のページ
+;; (defun navi2ch-search-find-2ch-previous ()
+;;   (- (min navi2ch-search-find-2ch-search-num 50)))
 
 ;;; navi2ch dig.2ch.net
 (defvar navi2ch-search-dig-method
@@ -470,7 +470,7 @@ find.2ch.net の仕様上、最大は50件")
 (defvar navi2ch-search-dig-current-page nil)
 (defvar navi2ch-search-dig-coding 'utf-8)
 (defconst navi2ch-search-dig-thread-regexp
-  "<br><a href=\"\\(http://.+.2ch.net/test/read.cgi/.+/[0-9]+/\\)l5\">\\(.+\\) (\\([0-9]+\\))</a>")
+  "<a href=\"http://bintan.ula.cc/test/read\.cgi/\\(.+.2ch.net\\)/\\(.+/[0-9]+/\\)l50\">\\(.+\\) (\\([0-9]+\\))</a>")
 
 (defun navi2ch-search-dig-subject-list (query arg)
   "dig.2ch.net に文字列 `query' でリクエスト。"
@@ -483,7 +483,7 @@ find.2ch.net の仕様上、最大は50件")
   (let* ((query (navi2ch-url-encode-string query
                                            navi2ch-search-dig-coding t))
          (url (format
-               "http://dig.2ch.net/?P=%d&keywords=%s&maxResult=50&atLeast=1&Sort=5&Link=1&Bbs=all&924=1"
+               "http://dig.2ch.net/?P=%d&keywords=%s&maxResult=50&atLeast=1&Sort=5&Link=1&Bbs=all&924=0"
                navi2ch-search-dig-current-page query))
          (proc (navi2ch-net-download-file url))
          (cont (decode-coding-string (navi2ch-net-get-content proc)
@@ -501,10 +501,11 @@ find.2ch.net の仕様上、最大は50件")
 	    (while (re-search-forward
 		    navi2ch-search-dig-thread-regexp
 		    nil t)
-	      (let ((url (match-string 1))
-		    (title (navi2ch-replace-html-tag (match-string 2)))
-		    (num  (match-string 3)))
-		(push (navi2ch-search-web-make-list url title num)
+	      (let ((host (match-string 1))
+		    (datid (match-string 2))
+		    (title (navi2ch-replace-html-tag (match-string 3)))
+		    (num  (match-string 4)))
+		(push (navi2ch-search-web-make-list (concat "http://" host "/test/read.cgi/" datid) title num)
 		      subject-list))))
 	(setq navi2ch-search-web-total-hit 0)
 	(message "No match")))
