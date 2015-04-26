@@ -129,7 +129,7 @@
         ;; http://imepic.jp/20111231/11111 ->
         ;; http://img1.imepic.jp/image/20111231/11111.jpg?550e3768ff8455488ae8d5582f55db6d
         ("h?ttp://imepic\\.jp/\\([0-9/]+\\)" ".jpg" navi2ch-thumbnail-imepic "http://img1.imepic.jp/image/")
-        ("h?t?tps?://twitter.com/.+/status/[0-9]+/photo/1" ".jpg" navi2ch-thumbnail-twitpic nil)
+        ("h?t?tps?://twitter.com/.+/status/[0-9]+/photo/1" ".jpg" navi2ch-thumbnail-twitter nil)
   )
       "リスト構造
   0:対象URL正規表現
@@ -180,21 +180,21 @@
                "GET"))
         cont)
     (setq cont (navi2ch-net-get-content proc))
-    (if (string-match "\\(http://img1\.imepic\.jp/image/[0-9]+/[0-9]+\.jpg\?.+\\)\"" cont)
+    ;image server changed img1 -> img3. and for future change
+    (if (string-match "\\(http://img[0-9]\.imepic\.jp/image/[0-9]+/[0-9]+\.jpg\?.+\\)\"" cont)
         (setq img-url (match-string 1 cont))
       (error "can't get image url from %s" url)))
-;  (message "imepic:%s" img-url)
   img-url)
 
-(defun navi2ch-thumbnail-twitpic (url &optional dummy0 dummy1)
-  "twitpicの場合の画像を取得"
+(defun navi2ch-thumbnail-twitter (url &optional dummy0 dummy1)
+  "twitter画像の場合の画像を取得"
   (let ((proc (navi2ch-net-send-request
                url
                "GET"))
         cont)
     (setq cont (navi2ch-net-get-content proc))
     (if (string-match "src=\"\\(https?://pbs\.twimg\.com/media/.+\.jpg\\)\"" cont)
-        (setq twitpic-img (match-string 1 cont))
+        (setq twitter-img (match-string 1 cont))
       (error "can't get image url from %s" url))))
 
 ;;articleから画像らしきリンクを探すregexを1行にまとめる
@@ -356,7 +356,7 @@
 		(previous-single-property-change (point) 'current-number)))
 	 (end (next-single-property-change
 	       (if prop (1+ (point)) (point))
-	       'current-number)))
+	       'current-number nil (point-max))))
     (navi2ch-thumbnail-image-show-region
      (if beg (max (1- beg) (point-min)) (point-min))
      end)))
@@ -408,13 +408,15 @@
 				       (list (cons "Referer" referer))))
 	(unless (file-exists-p file)
 	  (error "ファイルがありません %s" file))
-	(unless (image-type-from-file-header file)
-	  (let (buffer-error)
-	    (with-temp-buffer
-	      (insert-file-contents file nil 0 500)
-	      (setq buffer-error (buffer-string)))
-	    (delete-file file)
-	    (error "画像ファイルではありません %s %s" file buffer-error)))
+        ;; emacs22 image identify is poor 
+        (when (>= emacs-major-version 23)
+          (unless (image-type-from-file-header file)
+            (let (buffer-error)
+              (with-temp-buffer
+                (insert-file-contents file nil 0 500)
+                (setq buffer-error (buffer-string)))
+              (delete-file file)
+              (error "画像ファイルではありません %s %s" file buffer-error))))
 	(setq filename (file-name-nondirectory file))
 	(setq image-attr (navi2ch-thumbnail-image-identify file))
 	(if (not image-attr)
@@ -708,26 +710,27 @@
 
       ;; それでも無理なら外部プログラムに頼る
       (when navi2ch-thumbnail-image-identify-program
-	(message "identify called %s" file)
+;	(message "identify called %s" file)
 	(with-temp-buffer
           (cond
            (navi2ch-thumbnail-use-mac-sips
 	    (let (width height)
-	      (call-process 'sips' nil t nil "-g" "-all" file)
-	      (when (re-search-forward
-		     "pixelWidth: \\([0-9]+\\)")
-		(setq width (string-to-number (match-string 1))))
-	      (when (re-search-forward
-		     "pixelHeight: \\([0-9]+\\)")
-		(setq height (string-to-number (match-string 1))))
-	      ;;anime gifはあきらめる
-              (list width height nil)))
+	      (call-process "sips" nil t nil "-g" "all" file)
+	      (cond ((re-search-forward "Error: \\(.+\\)" nil t)
+                     (message "sips ERROR: %s" (match-string 1))
+                     nil)
+                    ((re-search-forward "pixelWidth: \\([0-9]+\\)" nil t)
+                     (setq width (string-to-number (match-string 1)))
+                     (re-search-forward "pixelHeight: \\([0-9]+\\)")
+                     (setq height (string-to-number (match-string 1)))
+                    ;;anime gifはあきらめる
+                     (list width height nil)))))
            (t
             (call-process navi2ch-thumbnail-image-identify-program nil t nil
                           "-quiet" "-format" "\"%n %w %h %b\"" file)
             (goto-char (point-min))
             (when (re-search-forward
-                   "\\([0-9]+\\) \\([0-9]+\\) \\([0-9]+\\) \\([0-9]+\\)")
+                   "\\([0-9]+\\) \\([0-9]+\\) \\([0-9]+\\) \\([0-9]+\\)" nil t)
               (list (string-to-number (match-string 2))
                     (string-to-number (match-string 3))
                     (> (string-to-number (match-string 1)) 1))))))))))

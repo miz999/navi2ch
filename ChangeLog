@@ -18,6 +18,34 @@
 	* elisp-comp: load-pathの修正
 	http://peace.2ch.net/test/read.cgi/unix/1405127170/58-60
 
+2014-10-23  MIZUNUMA Yuto  <mizmiz@sf.net>
+
+	* navi2ch-thumbnail.el (navi2ch-thumbnail-image-identify):
+	sips関連のテスト後の修正
+
+2014-10-22  MIZUNUMA Yuto  <mizmiz@sf.net>
+
+	* navi2ch-thumbnail.el (navi2ch-thumbnail-twitter):
+	twitpicという変数名が分かりづらいので修正(twitpicは厳密にはtwitterとは関係ない画像サービス)
+
+2014-10-21  MIZUNUMA Yuto  <mizmiz@sf.net>
+
+	* navi2ch-thumbnail.el (navi2ch-thumbnail-all-show):
+	最終レスの場合、変化点が検出できずに範囲のendにnilが入るバグの修正。
+	next-single-property-changeのoption引数で対応
+
+2014-10-14  MIZUNUMA Yuto  <mizmiz@sf.net>
+
+	* navi2ch-thumbnail.el (navi2ch-thumbnail-imepic):
+	image server changed img1 -> img3.将来の一桁サーバ名にも対応
+	delete comment
+
+2014-10-01  MIZUNUMA Yuto  <mizmiz@sf.net>
+
+	* navi2ch-thumbnail.el (navi2ch-thumbnail-show-image):
+	emacs22以前のimage-type-from-file-headerは貧弱なので使わない
+	(navi2ch-thumbnail-twitpic): httpsを使うこともあるようだ
+
 2014-07-16  MIZUNUMA Yuto  <mizmiz@sf.net>
 
 	* navi2ch-net.el (navi2ch-net-send-request): https -> https://
