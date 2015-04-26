@@ -1,3 +1,12 @@
+2015-04-01  MIZUNUMA Yuto  <mizmiz@sf.net>
+
+	* navi2ch-search.el (navi2ch-search-dig-subject-list):
+	スレタイ検索にdig.2ch.netを追加
+	navi2ch-search-web-search-methodをdigに
+	find.2ch.netは本文検索サイトになったのでコメントアウト
+	hulaは大文字小文字区別なのでdigをデフォルトに
+	navi2ch-search-union-methodを使うべきかは保留
+
 2015-03-30  MIZUNUMA Yuto  <mizmiz@sf.net>
 
 	* navi2ch-thumbnail.el (navi2ch-thumbnail-twitpic):
