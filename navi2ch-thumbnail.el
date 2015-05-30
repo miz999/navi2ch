@@ -124,12 +124,17 @@
 
 (defvar navi2ch-thumbnail-enable-status-check t)
 
-(defvar navi2ch-thumbnail-url-coversion-table
+(defvar navi2ch-thumbnail-url-conversion-table
       '(
+<<<<<<< HEAD
         ;; http://imepic.jp/20111231/11111 ->
         ;; http://img1.imepic.jp/image/20111231/11111.jpg?550e3768ff8455488ae8d5582f55db6d
         ("h?ttp://imepic\\.jp/\\([0-9/]+\\)" ".jpg" navi2ch-thumbnail-imepic "http://img1.imepic.jp/image/")
         ("h?t?tps?://twitter.com/.+/status/[0-9]+/photo/1" ".jpg" navi2ch-thumbnail-twitter nil)
+=======
+        ("h?ttp://imepic\\.jp/\\([0-9/]+\\)" ".jpg" navi2ch-thumbnail-imepic nil)
+        ("h?t?tps?://twitter.com/.+/status/[0-9]+/photo/1" ".jpg" navi2ch-thumbnail-twitpic nil)
+>>>>>>> imepic-server-change
   )
       "リスト構造
   0:対象URL正規表現
@@ -144,7 +149,7 @@
   (let ((rtn nil) (real-image-url url) (target-list nil) (cache-url url))
     
     ;;imepic等のURLが画像っぽくない場合の処理
-    (dolist (l navi2ch-thumbnail-url-coversion-table)
+    (dolist (l navi2ch-thumbnail-url-conversion-table)
       (setq url-regex (nth 0 l))
       (setq ext (nth 1 l))
       (when (string-match url-regex url)
@@ -180,11 +185,17 @@
                "GET"))
         cont)
     (setq cont (navi2ch-net-get-content proc))
+<<<<<<< HEAD
     ;image server changed img1 -> img3. and for future change
     (if (string-match "\\(http://img[0-9]\.imepic\.jp/image/[0-9]+/[0-9]+\.jpg\?.+\\)\"" cont)
         (setq img-url (match-string 1 cont))
       (error "can't get image url from %s" url)))
   img-url)
+=======
+    (if (string-match "\\(http://img[0-9]\.imepic\.jp/image/[0-9]+/[0-9]+\.\\(gif\\|jpe?g\\|png\\)\?.+\\)\"" cont)
+        (match-string 1 cont))
+      (error "can't get imepic image from %s" url)))
+>>>>>>> imepic-server-change
 
 (defun navi2ch-thumbnail-twitter (url &optional dummy0 dummy1)
   "twitter画像の場合の画像を取得"
@@ -205,7 +216,7 @@
   (setq navi2ch-thumbnail-image-url-regex
         (concat "\\("
                 (mapconcat (function (lambda (x) (nth 0 x)))
-                           navi2ch-thumbnail-url-coversion-table "\\|")
+                           navi2ch-thumbnail-url-conversion-table "\\|")
                 "\\|h?t?tps?://[^ \t\n\r]+\\.\\(gif\\|jpe?g\\|png\\)"
                 "\\)")))
 
