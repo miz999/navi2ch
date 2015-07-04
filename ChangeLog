@@ -1,3 +1,7 @@
+2015-07-05  MIZUNUMA Yuto  <mizmiz@sf.net>
+
+	* navi2ch-search.el (navi2ch-search-dig-thread-regexp): http://dig.2ch.net 仕様変更
+
 2015-04-01  MIZUNUMA Yuto  <mizmiz@sf.net>
 
 	* navi2ch-search.el (navi2ch-search-dig-subject-list):
