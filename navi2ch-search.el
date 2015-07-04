@@ -470,7 +470,8 @@
 (defvar navi2ch-search-dig-current-page nil)
 (defvar navi2ch-search-dig-coding 'utf-8)
 (defconst navi2ch-search-dig-thread-regexp
-  "<a href=\"http://bintan.ula.cc/test/read\.cgi/\\(.+.2ch.net\\)/\\(.+/[0-9]+/\\)l50\">\\(.+\\) (\\([0-9]+\\))</a>")
+  "<span class=\"suretai\"><a href=\"http://\\(.+.2ch.net\\)/\\(.+/[0-9]+/\\)l50\">\\(.+\\) (\\([0-9]+\\))</a></span><br>"
+  )
 
 (defun navi2ch-search-dig-subject-list (query arg)
   "dig.2ch.net に文字列 `query' でリクエスト。"
