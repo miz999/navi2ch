@@ -1,3 +1,7 @@
+2015-07-07  MIZUNUMA Yuto  <mizmiz@sf.net>
+
+	* navi2ch-thumbnail.el (navi2ch-thumbnail-twitter): twitter画像のpngに対応 
+
 2015-07-05  MIZUNUMA Yuto  <mizmiz@sf.net>
 
 	* navi2ch-search.el (navi2ch-search-dig-thread-regexp): http://dig.2ch.net 仕様変更
