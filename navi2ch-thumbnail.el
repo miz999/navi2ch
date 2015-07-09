@@ -379,8 +379,7 @@
 
 (defun navi2ch-thumbnail-image-escape-filename (filename)
   "ファイル名に使えない文字をエスケープ"
-  (navi2ch-replace-string-regexp-alist '(("-" . "%2d")
-					 (":" . "%3a")
+  (navi2ch-replace-string-regexp-alist '((":" . "%3a")
 					 ("\\?" . "%63"))
 				       filename
 				       t))

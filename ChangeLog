@@ -1,3 +1,7 @@
+2015-07-10  MIZUNUMA Yuto  <mizmiz@sf.net>
+
+	* navi2ch-thumbnail.el (navi2ch-thumbnail-image-escape-filename): ハイフンはファイル名で使えるので
+
 2015-07-07  MIZUNUMA Yuto  <mizmiz@sf.net>
 
 	* navi2ch-thumbnail.el (navi2ch-thumbnail-twitter): twitter画像のpngに対応 
