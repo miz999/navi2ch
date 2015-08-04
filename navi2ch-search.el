@@ -470,7 +470,7 @@
 (defvar navi2ch-search-dig-current-page nil)
 (defvar navi2ch-search-dig-coding 'utf-8)
 (defconst navi2ch-search-dig-thread-regexp
-  "<span class=\"suretai\"><a href=\"http://\\(.+.2ch.net\\)/\\(.+/[0-9]+/\\)l50\">\\(.+\\) (\\([0-9]+\\))</a></span><br>"
+  "<span class=\"suretai\"><a href=\"\\(http://.+.2ch.net/.+/[0-9]+/\\)l50\">\\(.+\\) (\\([0-9]+\\))</a></span><br>"
   )
 
 (defun navi2ch-search-dig-subject-list (query arg)
@@ -502,11 +502,10 @@
 	    (while (re-search-forward
 		    navi2ch-search-dig-thread-regexp
 		    nil t)
-	      (let ((host (match-string 1))
-		    (datid (match-string 2))
-		    (title (navi2ch-replace-html-tag (match-string 3)))
-		    (num  (match-string 4)))
-		(push (navi2ch-search-web-make-list (concat "http://" host "/test/read.cgi/" datid) title num)
+	      (let ((url (match-string 1))
+		    (title (navi2ch-replace-html-tag (match-string 2)))
+		    (num  (match-string 3)))
+		(push (navi2ch-search-web-make-list url title num)
 		      subject-list))))
 	(setq navi2ch-search-web-total-hit 0)
 	(message "No match")))

@@ -1,3 +1,7 @@
+2015-08-05  MIZUNUMA Yuto  <mizmiz@sf.net>
+
+	* navi2ch-search.el (navi2ch-search-hula-subject-list): dig.2ch.net 仕様変更に追随
+
 2015-07-20  MIZUNUMA Yuto  <mizmiz@sf.net>
 
 	* navi2ch-util.el (navi2ch-url-to-host): add https
