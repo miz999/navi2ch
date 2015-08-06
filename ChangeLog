@@ -1,3 +1,7 @@
+2015-08-06  MIZUNUMA Yuto  <mizmiz@sf.net>
+
+	* navi2ch-article.el: 2chの現状に合わなくなってきたため、スレスト判断機能削除
+
 2015-08-05  MIZUNUMA Yuto  <mizmiz@sf.net>
 
 	* navi2ch-search.el (navi2ch-search-hula-subject-list): dig.2ch.net 仕様変更に追随
