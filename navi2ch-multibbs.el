@@ -361,25 +361,25 @@ START が non-nil ならばレス番号 START からの差分を取得する。
 		     (navi2ch-net-update-file-diff url file time)
 		   (navi2ch-net-update-file url file time)))
     (setq kako-p (navi2ch-net-get-state 'error header))
-    (when kako-p
-      (setq url (navi2ch-article-get-kako-url board article))
-      (setq header (navi2ch-net-update-file url file))
+    ;; (when kako-p
+    ;;   (setq url (navi2ch-article-get-kako-url board article))
+    ;;   (setq header (navi2ch-net-update-file url file))
       
-      ;;mimizunから過去ログ取得
-      (when (and (navi2ch-net-get-state 'error header)
-		 (not (member (cdr (assq 'id board)) navi2ch-2ch-mimizun-negative-list))
-		 navi2ch-2ch-mimizun
-		 (y-or-n-p "みみずんからdatを取得しますか？"))
-	(let* ((boardid (cdr (assq 'id board)))
-	       (artid (cdr (assq 'artid article))))
-	  (setq url (concat "http://mimizun.com/log/2ch/" boardid "/" artid ".dat"))
-	  (message "mimizun url:%s" url)
-	  (setq header (navi2ch-net-update-file url file))
-	  (if (navi2ch-net-get-state 'error header)
-	      (message "みみずんからも取得できませんでした"))))
+    ;;   ;;mimizunから過去ログ取得
+    ;;   (when (and (navi2ch-net-get-state 'error header)
+    ;;     	 (not (member (cdr (assq 'id board)) navi2ch-2ch-mimizun-negative-list))
+    ;;     	 navi2ch-2ch-mimizun
+    ;;     	 (y-or-n-p "みみずんからdatを取得しますか？"))
+    ;;     (let* ((boardid (cdr (assq 'id board)))
+    ;;            (artid (cdr (assq 'artid article))))
+    ;;       (setq url (concat "http://mimizun.com/log/2ch/" boardid "/" artid ".dat"))
+    ;;       (message "mimizun url:%s" url)
+    ;;       (setq header (navi2ch-net-update-file url file))
+    ;;       (if (navi2ch-net-get-state 'error header)
+    ;;           (message "みみずんからも取得できませんでした"))))
 	
-      (unless (navi2ch-net-get-state 'error header)
-	(setq header (navi2ch-net-add-state 'kako header))))
+    ;;   (unless (navi2ch-net-get-state 'error header)
+    ;;     (setq header (navi2ch-net-add-state 'kako header))))
     header))
 
 (defun navi2ch-2ch-url-to-board (url)
