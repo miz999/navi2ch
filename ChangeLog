@@ -1,3 +1,8 @@
+2018-01-01  MIZUNUMA Yuto  <mizmiz@sf.net>
+
+	* navi2ch-net.el (navi2ch-net-download-file): cloudflareのエラー対応追加
+	(navi2ch-net-send-request): コメントアウト削除
+
 2015-08-06  MIZUNUMA Yuto  <mizmiz@sf.net>
 
 	* navi2ch-article.el: 2chの現状に合わなくなってきたため、スレスト判断機能削除
