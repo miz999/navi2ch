@@ -470,8 +470,8 @@
 (defvar navi2ch-search-dig-current-page nil)
 (defvar navi2ch-search-dig-coding 'utf-8)
 (defconst navi2ch-search-dig-thread-regexp
-  "<span class=\"suretai\"><a href=\"\\(http://.+.2ch.net/.+/[0-9]+/\\)l50\">\\(.+\\) (\\([0-9]+\\))</a></span><br>"
-  )
+  " href=\"\\(http://.+.\\(?:bbspink\\.com\\|5ch\\.net\\)/.+/[0-9]+/\\)\\(?:l10\\)\" .+nofollow\">\\(.+\\)(\\([0-9]+\\))</a></span>")
+
 
 (defun navi2ch-search-dig-subject-list (query arg)
   "dig.2ch.net に文字列 `query' でリクエスト。"
@@ -484,7 +484,7 @@
   (let* ((query (navi2ch-url-encode-string query
                                            navi2ch-search-dig-coding t))
          (url (format
-               "http://dig.2ch.net/?P=%d&keywords=%s&maxResult=50&atLeast=1&Sort=5&Link=1&Bbs=all&924=0"
+               "https://dig.5ch.net/?P=%d&keywords=%s&maxResult=50&atLeast=1&Sort=5&Link=1&Bbs=all&924=0"
                navi2ch-search-dig-current-page query))
          (proc (navi2ch-net-download-file url))
          (cont (decode-coding-string (navi2ch-net-get-content proc)
@@ -493,7 +493,7 @@
     (with-temp-buffer
       (insert cont)
       (goto-char (point-min))
-      (if (re-search-forward "\\([0-9,]+\\)件見つかりました"
+      (if (re-search-forward "\\[秒\\]\\([0-9,]+\\)件発見"
 			     nil t)
 	  (progn
 	    (setq navi2ch-search-web-total-hit

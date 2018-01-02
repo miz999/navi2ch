@@ -1,3 +1,7 @@
+2018-01-03  MIZUNUMA Yuto  <mizmiz@sf.net>
+
+	* navi2ch-search.el (navi2ch-search-dig-subject-list): 2ch->5ch対応
+
 2018-01-02  MIZUNUMA Yuto  <mizmiz@sf.net>
 
 	* navi2ch-multibbs.el (navi2ch-2ch-article-update): 5ch(2ch)の仕様変更で過去ログ機能廃止
