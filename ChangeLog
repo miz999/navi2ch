@@ -1,3 +1,7 @@
+2018-01-05  MIZUNUMA Yuto  <mizmiz@sf.net>
+
+	* navi2ch-thumbnail.el (navi2ch-thumbnail-image-escape-filename): '?'のエスケープのバグ修正
+
 2018-01-03  MIZUNUMA Yuto  <mizmiz@sf.net>
 
 	* navi2ch-search.el (navi2ch-search-dig-subject-list): 2ch->5ch対応
