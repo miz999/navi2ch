@@ -1,3 +1,8 @@
+2018-01-11  MIZUNUMA Yuto  <mizmiz@sf.net>
+
+	* navi2ch-multibbs.el (navi2ch-2ch-url-to-board): http -> https
+	(navi2ch-2ch-url-to-article): http -> https
+
 2018-01-05  MIZUNUMA Yuto  <mizmiz@sf.net>
 
 	* navi2ch-thumbnail.el (navi2ch-thumbnail-image-escape-filename): '?'のエスケープのバグ修正

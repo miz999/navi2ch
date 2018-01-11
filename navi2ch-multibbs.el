@@ -385,17 +385,17 @@ START が non-nil ならばレス番号 START からの差分を取得する。
 (defun navi2ch-2ch-url-to-board (url)
   (let (host id)
     (cond ((or (string-match
-		"http://\\(.+\\)/test/\\(read\\.cgi\\|r\\.i\\).*bbs=\\([^&]+\\)" url)
+		"https?://\\(.+\\)/test/\\(read\\.cgi\\|r\\.i\\).*bbs=\\([^&]+\\)" url)
 	       (string-match
-		"http://\\(.+\\)/test/\\(read\\.cgi\\|r\\.i\\)/\\([^/]+\\)/" url))
+		"https?://\\(.+\\)/test/\\(read\\.cgi\\|r\\.i\\)/\\([^/]+\\)/" url))
 	   (setq host (match-string 1 url)
 		 id (match-string 3 url)))
 	  ((or (string-match
-		"http://\\(.+\\)/\\([^/]+\\)/kako/[0-9]+/" url)
+		"https?://\\(.+\\)/\\([^/]+\\)/kako/[0-9]+/" url)
 	       (string-match
-		"http://\\(.+\\)/\\([^/]+\\)/i/" url)
+		"https?://\\(.+\\)/\\([^/]+\\)/i/" url)
 	       (string-match
-		"http://\\(.+\\)/\\([^/]+\\)" url))
+		"https?://\\(.+\\)/\\([^/]+\\)" url))
 	   (setq host (match-string 1 url)
 		 id (match-string 2 url))))
     (when id
@@ -406,27 +406,27 @@ START が non-nil ならばレス番号 START からの差分を取得する。
   "URL から article に変換。"
   (let (artid number kako)
     (cond ((string-match
-	    "http://.+/test/read\\.cgi.*&key=\\([0-9]+\\)" url)
+	    "https?://.+/test/read\\.cgi.*&key=\\([0-9]+\\)" url)
 	   (setq artid (match-string 1 url))
 	   (when (string-match "&st=\\([0-9]+\\)" url)
 	     (setq number (string-to-number (match-string 1 url)))))
 	  ;; http://pc.2ch.net/test/read.cgi/unix/1065246418/ とか。
 	  ((string-match
-	    "http://.+/test/\\(read\\.cgi\\|r\\.i\\)/[^/]+/\\([^/]+\\)" url)
+	    "https?://.+/test/\\(read\\.cgi\\|r\\.i\\)/[^/]+/\\([^/]+\\)" url)
 	   (setq artid (match-string 2 url))
 	   (when (string-match
-		  "http://.+/test/\\(read\\.cgi\\|r\\.i\\)/[^/]+/[^/]+/[ni.]?\\([0-9]+\\)[^/]*$" url)
+		  "https?://.+/test/\\(read\\.cgi\\|r\\.i\\)/[^/]+/[^/]+/[ni.]?\\([0-9]+\\)[^/]*$" url)
 	     (setq number (string-to-number (match-string 2 url)))))
 	  ;; "http://pc.2ch.net/unix/kako/999/999166513.html" とか。
 	  ;; "http://pc.2ch.net/unix/kako/1009/10093/1009340234.html" とか。
 	  ((or (string-match
-		"http://.+/kako/[0-9]+/\\([0-9]+\\)\\.\\(dat\\|html\\)" url)
+		"https?://.+/kako/[0-9]+/\\([0-9]+\\)\\.\\(dat\\|html\\)" url)
 	       (string-match
-		"http://.+/kako/[0-9]+/[0-9]+/\\([0-9]+\\)\\.\\(dat\\|html\\)" url))
+		"https?://.+/kako/[0-9]+/[0-9]+/\\([0-9]+\\)\\.\\(dat\\|html\\)" url))
 	   (setq artid (match-string 1 url))
 	   (setq kako t))
 	  ((string-match
-	    "http://.+/\\([0-9]+\\)\\.\\(dat\\|html\\)" url)
+	    "https?://.+/\\([0-9]+\\)\\.\\(dat\\|html\\)" url)
 	   (setq artid (match-string 1 url))))
     (let (list)
       (when artid
