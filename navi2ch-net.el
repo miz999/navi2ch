@@ -888,7 +888,7 @@ This is taken from RFC 2396.")
   (let* ((alist (navi2ch-net-split-url url))
 	 (domain-list (navi2ch-net-cookie-domains (cdr (assq 'host alist))))
 	 (path-list (navi2ch-net-cookie-paths (cdr (assq 'file alist)))))
-    (flet ((mcn (function list) (apply #'nconc (mapcar function list))))
+    (cl-flet ((mcn (function list) (apply #'nconc (mapcar function list))))
       (mcn (lambda (domain)
 	     (mcn (lambda (path)
 		    (navi2ch-net-expire-cookies
@@ -902,7 +902,7 @@ This is taken from RFC 2396.")
 
 (defun navi2ch-net-save-cookies ()
   (let ((now (current-time)))
-    (flet ((strip (f l) (let ((tmp (delq nil (mapcar f (cdr l)))))
+    (cl-flet ((strip (f l) (let ((tmp (delq nil (mapcar f (cdr l)))))
 			  (and tmp (cons (car l) tmp)))))
       (navi2ch-save-info
        navi2ch-net-cookie-file

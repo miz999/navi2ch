@@ -1,3 +1,8 @@
+2018-01-12  MIZUNUMA Yuto  <mizmiz@sf.net>
+
+	* navi2ch-net.el (navi2ch-net-save-cookies): fletがobsoleteの警告が出るのでcl-fletに修正
+	(navi2ch-net-match-cookies): fletがobsoleteの警告が出るのでcl-fletに修正
+
 2018-01-11  MIZUNUMA Yuto  <mizmiz@sf.net>
 
 	* navi2ch-multibbs.el (navi2ch-2ch-url-to-board): http -> https
