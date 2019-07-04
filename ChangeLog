@@ -1,3 +1,7 @@
+2019-07-04  MIZUNUMA Yuto  <mizmiz@sf.net>
+
+	* navi2ch-thumbnail.el (navi2ch-thumbnail-url-status-check): 複雑な処理を簡素に。関連コメント削除
+
 2018-01-12  MIZUNUMA Yuto  <mizmiz@sf.net>
 
 	* navi2ch-net.el (navi2ch-net-save-cookies): fletがobsoleteの警告が出るのでcl-fletに修正

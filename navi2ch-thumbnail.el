@@ -511,7 +511,6 @@
 		     navi2ch-browse-url-image-extentions))
 ;	(when (not (navi2ch-thumbnail-insert-image-cache
 ;		    (substring prop 7 nil)))
-;	  (setq url (navi2ch-thumbnail-url-status-check prop))
 ;	  (dolist (l navi2ch-thumbnail-404-list)
 ;	    (when (string-match l url)
 ;	      (error "ファイルが404 url=%s" url)))
@@ -523,40 +522,37 @@
 (defun navi2ch-thumbnail-url-status-check (url)
   "画像取得前に302や404のチェック。302の場合移動先URLを返す"
   (when navi2ch-thumbnail-enable-status-check
-    (let (header status md5 proc)
-      (while (not (or (string= status "200")
-		      (string= status "201")
-		      (string= status "400")
-		      (string= status "405")))
+    (let ((location-url url)
+          header status proc )
+      (catch 'loop
+        (while (not
+                (if status
+                    (string-match "[245][0-9][0-9]" status)))
 	(setq proc (navi2ch-net-send-request
-		    url "HEAD"
+		    location-url "HEAD"
 		    (list
-;                     (cons "User-Agent:" navi2ch-net-user-agent)
-			  (cons "Referer" url )
-                          )))
-	(unless proc (error "サーバに接続できません url=%s" url))
-	(setq status (navi2ch-net-get-status proc))
-	(unless status (error "サーバに接続できません url=%s" url))
-	(message "status %s" status)
-
-	;; (setq header (navi2ch-net-get-header proc))	
-	;; (when (setq md5 (cdr (assq 'Content-MD5 header)))
-	;;   (error "Content-MD5 %s" md5))
-
-	(cond ((or (string= status "404")
-		   (string= status "403")
-		   (string= status "408")
-		   (string= status "503"))
-	       (error "ブラウズするのやめました return code %s" status))
-	      ((or (string= status "301")
-		   (string= status "302")
-		   (string= status "303")
-		   (string= status "307")
-                   )
-	       (setq header (navi2ch-net-get-header proc))
-	       (setq url (cdr (assq 'location header)))
-	       (message "loacation %s" url))))))
-  url)
+			  (cons "Referer" url ))))
+	(unless (and proc
+                    (setq status (navi2ch-net-get-status proc)))
+          (message "サーバに接続できません url=%s" location-url)
+          (throw 'loop nil))
+	(cond ((if status
+                   (string-match "[45][0-9][0-9]" status))
+               (setq location-url nil)
+	       (message "ブラウズするのやめました return code %s" status)
+               (throw 'loop nil))
+	      ((if status
+                   (string-match "[3][0-9][0-9]" status))
+	       (setq header (cdr (assq 'location (navi2ch-net-get-header proc))))
+	       (setq location-url
+;                                   (if (string-match "^/.+" url)
+                                   (if (string-match "^/.+" header)
+                                       (concat "http://"
+                                               (cdr (assq 'host (navi2ch-net-split-url url)))
+                                               header)
+                                    header))
+	       (message "loacation %s" location-url))))
+  location-url))))
 
 (defun navi2ch-thumbnail-image-jpeg-identify (data)
   (let ((len (length data)) (i 2) (anime nil))
