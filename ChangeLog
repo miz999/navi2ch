@@ -1,3 +1,7 @@
+2019-07-08  MIZUNUMA Yuto  <mizmiz@sf.net>
+
+	* navi2ch-util.el (navi2ch-browse-url-internal): チェックの簡略化
+
 2019-07-04  MIZUNUMA Yuto  <mizmiz@sf.net>
 
 	* navi2ch-thumbnail.el (navi2ch-thumbnail-url-status-check): 複雑な処理を簡素に。関連コメント削除
