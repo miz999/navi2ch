@@ -1,3 +1,8 @@
+2020-06-12  MIZUNUMA Yuto  <mizmiz@sf.net>
+
+	* navi2ch-thumbnail.el (navi2ch-thumbnail-image-pre): navi2ch-thumbnail-url-status-checkはそれほどの意味がないのでやめる
+
+
 2019-07-08  MIZUNUMA Yuto  <mizmiz@sf.net>
 
 	* navi2ch-util.el (navi2ch-browse-url-internal): チェックの簡略化
