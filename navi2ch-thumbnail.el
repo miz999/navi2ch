@@ -155,7 +155,6 @@
 
     ;;キャッシュが無いので取得
     (when (and (not rtn) force)
-      (setq real-image-url (navi2ch-thumbnail-url-status-check url))
       (dolist (l navi2ch-thumbnail-404-list)
         (when (string-match l real-image-url)
           (error "ファイルが404 url=%s" url)))
