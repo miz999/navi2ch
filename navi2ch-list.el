@@ -592,6 +592,8 @@ changed-list は '((board-id old-board new-board) ...) な alist。
 		(when (and (not ignore)
 			   (string-match "href=\\(.+/\\([^/]+\\)/\\)" attr))
 		  (setq url (match-string 1 attr))
+                  (when (string-match "^https" url)
+                    (setq url (replace-regexp-in-string "https" "http" url)))
 		  (setq url (or (cdr (assoc
 				      url
 				      navi2ch-list-moved-board-alist))
