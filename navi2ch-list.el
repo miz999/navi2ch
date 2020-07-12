@@ -567,7 +567,7 @@ changed-list $B$O(B '((board-id old-board new-board) ...) $B$J(B alist$B!#
   (let ((board-id (cdr (assoc url navi2ch-list-board-id-alist))))
     (or board-id
 	(save-match-data
-	  (if (string-match "\\`http://.+/\\([^/]+\\)/\\'" url)
+	  (if (string-match "\\`https?://.+/\\([^/]+\\)/\\'" url)
 	      (match-string 1 url))))))
 
 (defun navi2ch-list-make-board-txt ()
@@ -626,7 +626,7 @@ changed-list $B$O(B '((board-id old-board new-board) ...) $B$J(B alist$B!#
 
 (defun navi2ch-list-valid-board (uri)
   (save-match-data
-    (when (string-match "http://\\([^/]+\\)/\\([^/]+\\)/" uri)
+    (when (string-match "https?://\\([^/]+\\)/\\([^/]+\\)/" uri)
       (let ((host (match-string 1 uri)))
 	(and (not (string-match navi2ch-list-invalid-host-regexp host))
 	     (string-match navi2ch-list-valid-host-regexp host))))))

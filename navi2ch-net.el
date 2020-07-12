@@ -259,7 +259,7 @@ nil なら常に再接続する。")
 	  (condition-case nil
               (if (string-match "^https://" url)
                   (setq proc (funcall 'open-tls-stream
-                                      navi2ch-net-connection-name buf host "443"))
+                                      navi2ch-net-connection-name buf host port))
                 (setq proc (funcall navi2ch-open-network-stream-function
                                     navi2ch-net-connection-name buf host port)))
 	    (error (navi2ch-net-add-down-host host)))))
@@ -330,9 +330,11 @@ nil なら常に再接続する。")
        (cons 'user user)
        (cons 'pass pass)
        (cons 'host (match-string 1 url))
-       (cons 'port (string-to-number (or (match-string 2 url)
-					 "80")))
        (cons 'file (match-string 3 url))
+       (cons 'port (string-to-number (or (match-string 2 url)
+                                         (if (string-match "^https://" url)
+                                             "443"
+                                           "80"))))
        (cons 'host2ch host2ch)))))
 
 (defun navi2ch-net-http-basic-credentials (user pass)

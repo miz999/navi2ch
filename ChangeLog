@@ -1,3 +1,14 @@
+2020-07-12  MIZUNUMA Yuto  <mizmiz@sf.net>
+
+	* navi2ch-multibbs.el (navi2ch-2ch-board-get-file-name): 将来に向けて、きちんとhttpsに対応する
+
+	* navi2ch-list.el (navi2ch-list-board-id-from-url)
+	(navi2ch-list-make-board-txt)
+	(navi2ch-list-valid-board): 将来に向けて、きちんとhttpsに対応する
+
+	* navi2ch-net.el (navi2ch-net-send-request)
+	(navi2ch-net-split-url): 将来に向けて、きちんとhttpsに対応する
+
 2020-07-08  MIZUNUMA Yuto  <mizmiz@sf.net>
 
 	* navi2ch-list.el (navi2ch-list-make-board-txt): board.txt https->http
