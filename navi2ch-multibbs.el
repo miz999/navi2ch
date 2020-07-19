@@ -325,12 +325,7 @@ START, END, NOFIRST で範囲を指定する"
 	       (let ((err (navi2ch-multibbs-send-message-error-string board proc)))
 		 (if (stringp err)
 		     (message (concat message-str "failed: %s") err)
-		   (message (concat message-str "failed")))
-		 ;;エラーメッセージからsamba秒数取得
-		 ;;(2ch依存のnavi2ch-multibbs-send-message-error-stringの奥の方で呼ぶ方が美しい気が)
-		 (if (and (stringp err) navi2ch-message-samba24-show)
-		     (navi2ch-message-samba24-modify-by-error bbs err))
-		 )
+		   (message (concat message-str "failed"))))
 	       (return nil)))))))
 
 (defsubst navi2ch-multibbs-board-update (board)
@@ -441,7 +436,6 @@ START が non-nil ならばレス番号 START からの差分を取得する。
 
 (defun navi2ch-2ch-send-message
   (from mail message subject bbs key time board article &optional post)
-  (when (navi2ch-message-samba24-check board)
     (let* ((url         (navi2ch-board-get-bbscgi-url board))
 	   (referer     (navi2ch-board-get-uri board))
 	   (param-alist (list
@@ -471,7 +465,7 @@ START が non-nil ならばレス番号 START からの差分を取得する。
 					    coding-system))))
 	(navi2ch-net-update-cookies url proc coding-system)
 	(navi2ch-net-save-cookies)
-	proc))))
+	proc)))
 
 (defun navi2ch-2ch-article-to-url
   (board article &optional start end nofirst)

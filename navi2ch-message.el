@@ -29,8 +29,6 @@
 (provide 'navi2ch-message)
 (defconst navi2ch-message-ident
   "$Id$")
-(defconst navi2ch-message-samba24-sambatxt-url
-  "http://nullpo.s101.xrea.com/samba24/conv.xcg?browser=bbs2chreader&decsec=majority&offset=0&newline=crlf&output=download")
 
 (eval-when-compile (require 'cl))
 
@@ -101,20 +99,6 @@
 (defvar navi2ch-message-link-face 'navi2ch-message-link-face)
 (defvar navi2ch-message-url-face 'navi2ch-message-url-face)
 (defvar navi2ch-message-citation-face 'navi2ch-message-citation-face)
-
-;; SAMBA24のデータ(urlだの板名だの時間だの)
-(defvar navi2ch-message-samba24-samba-data nil)
-(defvar navi2ch-message-samba24-send-time nil
-  "板IDと書き込み時間を保持")
-;; モードラインに表示するカウントダウン
-(defvar navi2ch-message-samba24-mode-string nil)
-(defvar navi2ch-message-samba24-show t
-  "non-nil なら書き込み規制時間を表示.")
-;; 現在表示中の書き込み規制時間モードライン
-(defvar navi2ch-message-samba24-mode-string nil)
-(defvar navi2ch-message-samba24-file-name "samba.txt"
-  "Samba24 の規制秒数情報を保持するファイルのファイル名.")
-(defvar navi2ch-message-samba24-update-timer nil)
 
 (defun navi2ch-message-write-message (board article &optional new sage cite)
   (when (or (not navi2ch-message-ask-before-write)
@@ -317,7 +301,6 @@
 		      (navi2ch-article-sync navi2ch-message-force-sync)))))
 	      (when (get-buffer navi2ch-message-backup-buffer-name)
 		(bury-buffer navi2ch-message-backup-buffer-name)))))
-	(navi2ch-message-samba24)
 	(run-hooks 'navi2ch-message-after-send-hook)
 	(if result
 	    (navi2ch-message-exit 'after-send)
@@ -657,151 +640,6 @@ header field へ移動しない以外は `back-to-indentation' と同じ。"
 
 ;; TODO: 2ch 内においては板IDが重複しないことを前提としている。今のとこ
 ;; ろは有効だが将来のことも考えると直すべき。
-
-(defun navi2ch-message-samba24-modeline ()
-  "書き込み経過時間をカウントダウンする."
-  (let* ((tmp-time (current-time))
-	 (now-time (+ (lsh (car tmp-time) 16) (nth 1 tmp-time)))
-	 samba-time time-diff)
-    (setq navi2ch-message-samba24-mode-string "")
-    (dolist (x navi2ch-message-samba24-send-time)
-      (let* ((id (car x))
-	     (id-normalized (if (string-match "^\\([^:]*\\):" id)
-				(match-string 1 id)
-			      id)))
-	(setq time-diff (- now-time (cdr x)))
-	(setq samba-time
-	      (navi2ch-message-samba24-search-samba 
-	       (navi2ch-message-samba24-board-conversion 'id id-normalized 'uri) 
-	       id-normalized))
-	(when samba-time
-	  (if (<= time-diff samba-time)
-	      (setq navi2ch-message-samba24-mode-string
-		    (format "%s:%d %s"
-			    (navi2ch-message-samba24-board-conversion 'id id 'name) 
-			    (- samba-time time-diff)
-			    navi2ch-message-samba24-mode-string))
-	    (setq navi2ch-message-samba24-send-time
-		  (delete x navi2ch-message-samba24-send-time))
-	    (unless navi2ch-message-samba24-send-time
-	      (cancel-timer navi2ch-message-samba24-update-timer)
-	      (setq navi2ch-message-samba24-update-timer nil))))))
-    (force-mode-line-update t)))
-
-(defun navi2ch-message-samba24 ()
-  "SAMBA24(連続投稿規制)の対応のため、書き込み許可待ち時間を表示する。
-レス送信時にコールされ、モードラインでカウントダウンを表示する"
-  (when navi2ch-message-samba24-show
-    (if (and (null navi2ch-message-samba24-samba-data)
-	     (null (navi2ch-message-samba24-read-samba)))
-	(message "samba.txtがありません")
-      (let* ((tmp-time (current-time))
-	     (last-write-time (+ (lsh (car tmp-time) 16) (cadr tmp-time)))
-	     (id (cdr (assq 'id navi2ch-message-current-board)))
-	     (id-list (assoc id navi2ch-message-samba24-send-time))
-	     (id-normalized (if (string-match "^\\([^:]*\\):" id)
-				(match-string 1 id)
-			      id)))
-	(when (navi2ch-message-samba24-search-samba 
-	       (navi2ch-message-samba24-board-conversion 'id id-normalized 'uri)
-	       id-normalized)
-	  (when id-list
-	    (setq navi2ch-message-samba24-send-time
-		  (delete id-list navi2ch-message-samba24-send-time)))
-	  (setq navi2ch-message-samba24-send-time
-		(cons (cons id last-write-time)
-		      navi2ch-message-samba24-send-time))
-	  (setq navi2ch-message-samba24-update-timer
-		(or navi2ch-message-samba24-update-timer
-		    (run-at-time 1 1 'navi2ch-message-samba24-modeline))))))))
-
-(defun navi2ch-message-samba24-board-conversion (src val dst)
-  "板名、ID、URLなどの相互変換。
-SRC=変換元の連想リスト左側 VAL=変換元の値(右側) DST=変換先の左側指定"
-  (catch 'loop
-    (dolist (x navi2ch-list-board-name-list)
-      (if (string= val (cdr (assq src x)))
-	  (throw 'loop (cdr (assq dst x)))))))
-
-(defun navi2ch-message-samba24-read-samba ()
-  "samba.txt から各サーバ、板ごとの連続投稿規制時間を読み込み、リストとして保持する.
-samba.txt は http://nullpo.s101.xrea.com/samba24/ から取得."
-  (interactive)
-  (let (navi2ch-message-samba24-file)
-    ;; 最新のsamba.txtを取得
-    (navi2ch-message-samba24-update)
-    (setq navi2ch-message-samba24-samba-data nil)
-    (setq navi2ch-message-samba24-file
-	  (navi2ch-expand-file-name navi2ch-message-samba24-file-name))
-    (when (and (file-exists-p navi2ch-message-samba24-file)
-	       (file-readable-p navi2ch-message-samba24-file))
-      (with-temp-buffer
-	(insert-file-contents navi2ch-message-samba24-file)
-	(goto-char (point-min))
-	(while (re-search-forward "\\([a-z0-9.]+\\)=\\([0-9]+\\)" nil t)
-	  (setq navi2ch-message-samba24-samba-data
-		(cons (cons (match-string 1)
-			    (string-to-number (match-string 2)))
-		      navi2ch-message-samba24-samba-data)))))
-    navi2ch-message-samba24-samba-data))
-
-;; FIXME: defsubst にしたい。
-(defun navi2ch-message-samba24-search-samba (url id)
-  "サーバ名、板名から連続投稿規制時間を得る.p2での書き込みの場合、10秒プラスのペナルティがある"
-  (let (samba-time
-        (samba-p2-time 0))
-    (when (and (stringp url)
-               (string-match "http://\\([^/]+\\)" url))
-      (when (navi2ch-p2-board-p id)
-        (setq samba-p2-time 10))
-      (setq samba-time (or (cdr (assoc id navi2ch-message-samba24-samba-data))
-                           (cdr (assoc (match-string 1 url) navi2ch-message-samba24-samba-data))))
-      (when samba-time
-         (+ samba-time samba-p2-time)))))
-
-(defun navi2ch-message-samba24-update ()
-  "samba24 の規制情報を更新."
-  ;; ファイルが動的生成っぽいのでIf-Modified-Since見ない？（高負荷？）
-  (navi2ch-net-update-file navi2ch-message-samba24-sambatxt-url
-			   (navi2ch-expand-file-name navi2ch-message-samba24-file-name)
-			   'file))
-
-(defun navi2ch-message-samba24-check (board)
-  "Samba24 にひっかかるかどうかチェック."
-  (let* ((id (cdr (assq 'id board)))
-	 (last-write-time (cdr (assoc id
-				      navi2ch-message-samba24-send-time))))
-    (or (null last-write-time)
-	(let* ((samba-time (navi2ch-message-samba24-search-samba 
-			    (navi2ch-message-samba24-board-conversion 'id id 'uri) 
-			    id))
-	       (tmp-time (current-time))
-	       (cur-time (+ (lsh (car tmp-time) 16) (cadr tmp-time)))
-	       (diff-time (- (+ last-write-time samba-time)
-			     cur-time)))
-	  (or (<= diff-time 0)
-	      (if navi2ch-message-samba24-wait-sleep
-		  (progn
-		    (while (> diff-time 0)
-		      (message "samba遅延書き込みフリーズ中 %s sec %s %s" diff-time (current-time-string) samba-time)
-		      (sleep-for 1)
-		      (setq diff-time (1- diff-time)))
-		    (message "samba遅延書き込みフリーズ終了 %s" (current-time-string)))
-	      (yes-or-no-p (format 
-			    "あと %d 秒待ったほうがいいと思うけど、本当に書きこむ? "
-			    diff-time))))))))
-
-(defun navi2ch-message-samba24-modify-by-error (id error)
-  "サーバから受け取ったエラーメッセージからsamba秒数を設定"
-  (when (string-match "593 \\([0-9]+\\) sec たたないと書けません。" error)
-    (navi2ch-message-samba24-modify id (string-to-number (match-string 1 error)))))
-
-(defun navi2ch-message-samba24-modify (id samba-time)
-  (when (assoc id navi2ch-message-samba24-samba-data)
-    (setq navi2ch-message-samba24-samba-data
-	  (delq (assoc id navi2ch-message-samba24-samba-data) navi2ch-message-samba24-samba-data)))
-  (setq navi2ch-message-samba24-samba-data
-	(cons (cons id samba-time) navi2ch-message-samba24-samba-data)))
 
 (run-hooks 'navi2ch-message-load-hook)
 ;;; navi2ch-message.el ends here

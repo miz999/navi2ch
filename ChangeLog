@@ -1,3 +1,7 @@
+2020-07-19  MIZUNUMA Yuto  <mizmiz@sf.net>
+
+	* 5ch(2ch)のsamba24廃止対応。関連コードの全削除でクリーンに保つ
+
 2020-07-12  MIZUNUMA Yuto  <mizmiz@sf.net>
 
 	* navi2ch-multibbs.el (navi2ch-2ch-board-get-file-name): 将来に向けて、きちんとhttpsに対応する

@@ -237,7 +237,6 @@
   (from mail message subject bbs key time board article &optional post)
   (unless navi2ch-p2-csrfid
       (navi2ch-p2-get-csrfid))
-  (when (navi2ch-message-samba24-check board)
     (let* ((url (concat navi2ch-p2-login-url "post.php?guid=ON"))
 	   (referer (concat navi2ch-p2-login-url "menu.php"))
 	   (param-alist (list
@@ -275,7 +274,7 @@
 					    coding-system))))
 	(navi2ch-net-update-cookies url proc coding-system)
 	(navi2ch-net-save-cookies)
-	proc))))
+	proc)))
 
 (defun navi2ch-p2-get-csrfid ()
   (message "navi2ch-p2-get-csrfid")
@@ -432,11 +431,7 @@
 		    (cons (list
 			   (concat "http://" host "/" bbs "/" key)
 			   (list 'board
-				 (cons 'name
-				       (navi2ch-message-samba24-board-conversion
-					'id
-					bbs
-					'name))
+				 (cons 'name)
 				 (cons 'uri
 				       (concat "http://" host "/" bbs "/"))
 				 (cons 'id bbs))

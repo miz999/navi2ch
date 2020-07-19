@@ -2248,16 +2248,6 @@ to force the image format."
   :type 'boolean
   :group 'navi2ch)
 
-(defcustom navi2ch-message-samba24-show nil
-  "* non-nil なら 連続投稿規制(通称SAMBA24)の経過時間カウントダウンを表示する"
-  :type 'boolean
-  :group 'navi2ch-message)
-
-(defcustom navi2ch-message-samba24-wait-sleep nil
-  "* non-nil ならsamba規制時間の解除までsleepする"
-  :type 'boolean
-  :group 'navi2ch-message)
-
 ;; p2
 (defcustom navi2ch-p2-use-p2 nil
   "* non-nil ならp2利用"

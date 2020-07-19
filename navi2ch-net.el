@@ -831,7 +831,6 @@ This is taken from RFC 2396.")
 				     coding-system)))
       (cond ((string-match "ＥＲＲＯＲ：\\([^<]+\\)" str)
 	     (match-string 1 str))
-	    ;; Samba24 http://age.s22.xrea.com/talk2ch/new.txt
 	    ((string-match "ＥＲＲＯＲ - \\([^<\n]+\\)" str)
 	     (match-string 1 str))
 	    ((string-match "\\(ログインエラー[^<]*\\)<br>" str)
