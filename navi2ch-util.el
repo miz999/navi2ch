@@ -672,6 +672,7 @@ return new alist whose car is the new pair and cdr is ALIST.
     (setq mode-line-buffer-identification
           (list offline
 		belogin
+		'navi2ch-thumbnail-count-string
 		'navi2ch-mode-line-identification)))
   (force-mode-line-update t))
 

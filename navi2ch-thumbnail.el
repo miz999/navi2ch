@@ -164,11 +164,11 @@
       (setq rtn (navi2ch-thumbnail-show-image real-image-url cache-url url))
     rtn )))
 
-(defun navi2ch-thumbnail-url-replace (url regex-src-url regex-dist-url)
-  "URLの単純置換"
-  (string-match regex-src-url url)
-  (message "%s" regex-dist-url)
-  (concat regex-dist-url (match-string 1 url)))
+;; (defun navi2ch-thumbnail-url-replace (url regex-src-url regex-dist-url)
+;;   "URLの単純置換"
+;;   (string-match regex-src-url url)
+;;   (message "%s" regex-dist-url)
+;;   (concat regex-dist-url (match-string 1 url)))
 
 (defun navi2ch-thumbnail-imepic (url regex-src-url regex-dist-url)
   "imepicの場合の画像を取得"
@@ -201,7 +201,7 @@
         (concat "\\("
                 (mapconcat (function (lambda (x) (nth 0 x)))
                            navi2ch-thumbnail-url-conversion-table "\\|")
-                "\\|h?t?tps?://[^ \t\n\r]+\\.\\(gif\\|jpe?g\\|png\\)"
+                "\\|h?t?tps?://[^ 　\t\n\r]+\\.\\(gif\\|jpe?g\\|png\\)"
                 "\\)")))
 
 (defun navi2ch-thumbnail-insert-image-reload ()
@@ -249,42 +249,42 @@
   (apply 'navi2ch-create-image
 	 file-or-data type data-p props))
 
-(defun navi2ch-thumbnail-save-content
-  (cache-filename filename &optional overwrite)
-  "キャッシュから画像を保存(サムネイルではなく元画像)"
-  (interactive
-   (let* ((prop-filename (get-text-property (point) 'file-name))
-	  (default-filename (and prop-filename
-				 (file-name-nondirectory prop-filename))))
-     (list (or (get-text-property (point) 'navi2ch-link)
-	       (error "No file to save."))
-	   (let ((filename
-		  (read-file-name
-		   (if default-filename
-		       (format "Save file (default `%s'): "
-			       default-filename)
-		     "Save file: ")
-		   navi2ch-thumbnail-save-content-dir
-		   (expand-file-name default-filename
-				     navi2ch-thumbnail-save-content-dir))))
-	     (if (file-directory-p filename)
-		 (if default-filename
-		     (expand-file-name default-filename filename)
-		   (error "%s is a directory" filename))
-	       filename))
-	   0)))
-  (copy-file cache-filename filename overwrite))
+;; (defun navi2ch-thumbnail-save-content
+;;   (cache-filename filename &optional overwrite)
+;;   "キャッシュから画像を保存(サムネイルではなく元画像)"
+;;   (interactive
+;;    (let* ((prop-filename (get-text-property (point) 'file-name))
+;; 	  (default-filename (and prop-filename
+;; 				 (file-name-nondirectory prop-filename))))
+;;      (list (or (get-text-property (point) 'navi2ch-link)
+;; 	       (error "No file to save."))
+;; 	   (let ((filename
+;; 		  (read-file-name
+;; 		   (if default-filename
+;; 		       (format "Save file (default `%s'): "
+;; 			       default-filename)
+;; 		     "Save file: ")
+;; 		   navi2ch-thumbnail-save-content-dir
+;; 		   (expand-file-name default-filename
+;; 				     navi2ch-thumbnail-save-content-dir))))
+;; 	     (if (file-directory-p filename)
+;; 		 (if default-filename
+;; 		     (expand-file-name default-filename filename)
+;; 		   (error "%s is a directory" filename))
+;; 	       filename))
+;; 	   0)))
+;;   (copy-file cache-filename filename overwrite))
 
-(defun navi2ch-thumbnail-show-image-external ()
-  "外部ビューアーで表示"
-  (interactive)
-  (let ((type (car (get-text-property (point) 'display)))
-	(prop (get-text-property (point) 'navi2ch-link)))
-    (when (eq type 'image)
-      (navi2ch-browse-url-image
-       (if (eq system-type 'windows-nt)
-	   (navi2ch-replace-string "/" "\\\\" prop t)
-	 prop)))))
+;; (defun navi2ch-thumbnail-show-image-external ()
+;;   "外部ビューアーで表示"
+;;   (interactive)
+;;   (let ((type (car (get-text-property (point) 'display)))
+;; 	(prop (get-text-property (point) 'navi2ch-link)))
+;;     (when (eq type 'image)
+;;       (navi2ch-browse-url-image
+;;        (if (eq system-type 'windows-nt)
+;; 	   (navi2ch-replace-string "/" "\\\\" prop t)
+;; 	 prop)))))
 
 (defun navi2ch-thumbnail-image-delete-cache ()
   "取得した画像を削除。キャッシュが無くなるの表示されなくなる"
@@ -501,20 +501,11 @@
       (cond
        ((and (not (navi2ch-thumbnail-image-shown-p))
              (string-match navi2ch-thumbnail-image-url-regex prop))
-        (navi2ch-thumbnail-image-pre prop t)
-;	(message "not image url but image")
-        )
+        (navi2ch-thumbnail-image-pre prop t))
 
        ((and (file-name-extension prop)
 	     (member (downcase (file-name-extension prop))
-		     navi2ch-browse-url-image-extentions))
-;	(when (not (navi2ch-thumbnail-insert-image-cache
-;		    (substring prop 7 nil)))
-;	  (dolist (l navi2ch-thumbnail-404-list)
-;	    (when (string-match l url)
-;	      (error "ファイルが404 url=%s" url)))
-;	  (navi2ch-thumbnail-show-image url prop))
-        )))
+		     navi2ch-browse-url-image-extentions)))))
      ((eq type 'image)
       (navi2ch-thumbnail-show-image-external)))))
 
