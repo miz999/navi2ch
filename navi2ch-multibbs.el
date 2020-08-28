@@ -505,8 +505,12 @@ START, END, NOFIRST で範囲を指定する"
     (let ((url (navi2ch-board-get-url
 		board (if navi2ch-board-use-subback-html
 			  navi2ch-board-subback-file-name)))
-	  (func (navi2ch-multibbs-subject-callback board)))
-      (navi2ch-net-update-file url file time func))))
+	  (func (navi2ch-multibbs-subject-callback board))
+	  header)
+      (when (setq header (navi2ch-net-update-file url file time func))
+	  (navi2ch-net-update-cookies url header (navi2ch-board-get-coding-system board))
+	  (navi2ch-net-save-cookies)
+	  header))))
 
 (defun navi2ch-2ch-board-get-file-name (board &optional file-name)
   (let ((uri (navi2ch-board-get-uri board))
