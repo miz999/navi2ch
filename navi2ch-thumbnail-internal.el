@@ -158,7 +158,7 @@
 	  (ext (match-string 3 pn))
 	  (bufname (match-string 4 pn))
 	  (pointnum (match-string 5 pn))
-	  (local-file (concat navi2ch-thumbnail-imagefetch-thumbnail-directory "pbs.twimg.com/media/" id ".thumb.jpg")))
+	  (local-file (concat navi2ch-thumbnail-thumbnail-directory "pbs.twimg.com/media/" id ".thumb.jpg")))
       (message "callback-twitter-id:%s -> %s" id (replace-regexp-in-string  "\n+$" "" result))
       (when (file-exists-p local-file)
 	(save-excursion
@@ -193,7 +193,7 @@
 	 (url-full (concat "http://i.imgur.com/" id "." ext))
 	 (filename-t (navi2ch-thumbnail-url-to-file url-t))
 	 (filename-full (navi2ch-thumbnail-url-to-file url-full))
-	 (target-file (concat navi2ch-thumbnail-imagefetch-thumbnail-directory "i.imgur.com/" id ".json"))
+	 (target-file (concat navi2ch-thumbnail-thumbnail-directory "i.imgur.com/" id ".json"))
 	 w h s gifv link header fname)
 ;      (setq target-file (if (eq system-type 'cygwin) (cygwin-convert-file-name-from-windows target-file) target-file))
 
@@ -246,9 +246,9 @@
   (navi2ch-thumbnail-process-count-up)
   (let ((url (concat "https://i.imgur.com/" id "." ext))
 	(url-thumb (concat "https://i.imgur.com/" id "t.jpg"))
-	(target-file (concat navi2ch-thumbnail-imagefetch-thumbnail-directory "i.imgur.com/" id "t.jpg"))
+	(target-file (concat navi2ch-thumbnail-thumbnail-directory "i.imgur.com/" id "t.jpg"))
 	(url-json (concat "https://api.imgur.com/3/image/" id ".json"))
-	(file-json (concat navi2ch-thumbnail-imagefetch-thumbnail-directory "i.imgur.com/" id ".json")))    
+	(file-json (concat navi2ch-thumbnail-thumbnail-directory "i.imgur.com/" id ".json")))    
     (navi2ch-thumbnail-bat-process-push
      (list curl_imgur_thumb.sh 'navi2ch-thumbnail-imgur-process-callback-thumb-curl
 	   (concat "curl-get-image_" id "_" (buffer-name) "_" (number-to-string (point)))
@@ -262,9 +262,9 @@
     (let* ((id (match-string 1 pn))
 	   (bufname (match-string 2 pn))
 	   (pointnum (match-string 3 pn))
-	   (json-file (concat navi2ch-thumbnail-imagefetch-thumbnail-directory "i.imgur.com/" id ".json"))
+	   (json-file (concat navi2ch-thumbnail-thumbnail-directory "i.imgur.com/" id ".json"))
 ;    (setq target-file (if (eq system-type 'cygwin) (cygwin-convert-file-name-from-windows target-file) target-file))
-	   (local-file (concat navi2ch-thumbnail-imagefetch-thumbnail-directory "i.imgur.com/" id "t.jpg")))
+	   (local-file (concat navi2ch-thumbnail-thumbnail-directory "i.imgur.com/" id "t.jpg")))
       (when (and (file-exists-p json-file) (file-exists-p local-file))
 	(let* ((imgur-json (cdr (assoc 'data (json-read-file json-file))))
 	       (w (cdr (assoc 'width imgur-json)))
@@ -372,7 +372,7 @@
                            (expand-file-name "java_lock.bat" navi2ch-top-directory )
                            navi2ch-thumbnail-java-imagefetch-classpass
                            url
-                           navi2ch-thumbnail-imagefetch-thumbnail-directory
+                           navi2ch-thumbnail-thumbnail-directory
                        (format "%s" navi2ch-thumbnail-thumbsize-width)
                            (format "%s" navi2ch-thumbnail-thumbsize-height) (if thumb thumb "jpg")))
   (set-process-filter proc 'navi2ch-thumbnail-process-callback-thumb)))
