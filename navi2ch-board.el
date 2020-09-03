@@ -174,6 +174,8 @@
 (defun navi2ch-board-get-bbscgi-url (board)
   "bbs.cgi の url を返す。"
   (let ((uri (navi2ch-board-get-uri board)))
+;    (string-match "https?\\(.+\\)/[^/]+/$" uri)
+ ;   (concat "https" (match-string 1 uri) (navi2ch-board-get-bbscgi-path board))))
     (string-match "\\(.+\\)/[^/]+/$" uri)
     (concat (match-string 1 uri) (navi2ch-board-get-bbscgi-path board))))
 
