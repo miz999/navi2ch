@@ -188,18 +188,16 @@
 (setq navi2ch-thumbnail-imgur-use-api t) ;to navi2ch-var.el
 (defun navi2ch-thumbnail-imgur-insert-thumbnail (id ext)
   (let* ((size-flag "t")
-	 (url-t (concat "http://i.imgur.com/" id size-flag ".jpg"))
-;	 (url-t (if (string= ext "gif") (concat "http://i.imgur.com/" id ".jpg") (concat "http://i.imgur.com/" id size-flag "." ext)))
-	 (url-full (concat "http://i.imgur.com/" id "." ext))
+	 (url-t (concat "https://i.imgur.com/" id size-flag ".jpg"))
+	 (url-full (concat "https://i.imgur.com/" id "." ext))
 	 (filename-t (navi2ch-thumbnail-url-to-file url-t))
 	 (filename-full (navi2ch-thumbnail-url-to-file url-full))
 	 (target-file (concat navi2ch-thumbnail-thumbnail-directory "i.imgur.com/" id ".json"))
 	 w h s gifv link header fname)
-;      (setq target-file (if (eq system-type 'cygwin) (cygwin-convert-file-name-from-windows target-file) target-file))
 
     (if (setq prop-list (navi2ch-thumbnail-image-prop-list-get url-full))
-;    (if (setq prop-list (navi2ch-thumbnail-image-prop-list-get (concat "https://i.imgur.com/" id "." ext)))
         (progn
+          (setq link (nth 0 prop-list))
           (setq w (nth 1 prop-list))
           (setq h (nth 2 prop-list)) 
           (setq s (nth 3 prop-list)))
@@ -212,8 +210,6 @@
 	  (setq link (cdr (assoc 'link (cdr (assoc 'data imgur-json)))))
 	  (navi2ch-thumbnail-image-prop-list-set link w h s))))
     
-;    (setq fname filename-t)
-;    (setq fname (expand-file-name (concat navi2ch-thumbnail-thumbnail-directory "i.imgur.com/" id size-flag ".jpg")))
     (if (file-exists-p filename-t)
 	(navi2ch-thumbnail-insert-image w h s url-full filename-t)
       (if navi2ch-thumbnail-imgur-use-api
@@ -308,6 +304,7 @@
          (h-fname (navi2ch-thumbnail-url-to-file (concat "https://i.imgur.com/" id "h.jpg" )))
          (json-file (navi2ch-thumbnail-url-to-file (concat "https://i.imgur.com/" id ".json" )))
          (fname original-fname)
+	 (navi2ch-net-http-proxy nil)
 	 (original-filesize (get-text-property (point) 'original-filesize)))
     (cond 
      ((file-exists-p original-fname)
