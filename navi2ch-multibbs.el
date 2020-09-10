@@ -450,6 +450,12 @@ START が non-nil ならばレス番号 START からの差分を取得する。
 			   (cons "key"    key))))
 	   (coding-system (navi2ch-board-get-coding-system board))
 	   (cookies (navi2ch-net-match-cookies url)))
+      ;;書き込みはhttpsオンリー
+      (setq url (navi2ch-replace-string "^http" "https" url))
+      ;;proxyは使わない。呼び出し側でnavi2ch-net-http-proxyがletバインド
+      (setq navi2ch-net-http-proxy nil)
+      ;;5ch書き込みにはREADJSというcookieが必要だが、これはjavascriptをパースしないと取得できないので強制付加
+      (setq cookies (append cookies '(("READJS" "off"))))
       (dolist (param post)
 	(unless (assoc (car param) param-alist)
 	  (push param param-alist)))
