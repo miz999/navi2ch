@@ -308,6 +308,7 @@
          (h-fname (navi2ch-thumbnail-url-to-file (concat "https://i.imgur.com/" id "h.jpg" )))
          (json-file (navi2ch-thumbnail-url-to-file (concat "https://i.imgur.com/" id ".json" )))
          (fname original-fname)
+	 (navi2ch-net-http-proxy nil)
 	 (original-filesize (get-text-property (point) 'original-filesize)))
     (cond 
      ((file-exists-p original-fname)
