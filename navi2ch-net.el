@@ -212,17 +212,18 @@ nil なら常に再接続する。")
 	 (< (navi2ch-float-time)
 	    (+ (cdr elt) (float navi2ch-net-retry-down-host))))))
 
-(defun navi2ch-net-use-proxy-p (url)
-  "2chproxy.plを経由すると5ch.netがはじかれるケースがあるので、直アクセス(https)が必要な場合がある"
-;  (setq navi2ch-net-http-proxy "localhost:8082")
-  (if (and (string-match (regexp-opt '(".5ch.net" ".bbspink.com")) (navi2ch-url-to-host url))
-           (not (string-match ".+/subject.txt$" url))
-;           (not (string-match "^https://dig.5ch.net/" url))
-;           (not (string-match "^http://.+.2ch.sc/" url))
-           (not (string-match ".+/bbsmenu.html" url))
-           (not (string-match ".+/test/bbs.cgi" url)))
-      nil
-    navi2ch-net-http-proxy))
+;; (defun navi2ch-net-use-proxy-p (url)
+;;   "2chproxy.plを経由すると5ch.netがはじかれるケースがあるので、直アクセス(https)が必要な場合がある"
+;; ;  (setq navi2ch-net-http-proxy "localhost:8082")
+;;   (if (and (string-match (regexp-opt '(".5ch.net" ".bbspink.com")) (navi2ch-url-to-host url))
+;;            (not (string-match ".+/subject.txt$" url))
+;; ;           (not (string-match "^https://dig.5ch.net/" url))
+;; ;           (not (string-match "^http://.+.2ch.sc/" url))
+;;            (not (string-match ".+/bbsmenu.html" url))
+;;            (not (string-match ".+/test/bbs.cgi" url)))
+;;       navi2ch-net-http-proxy
+;;     nil
+;;     ))
 
 (defun navi2ch-net-send-request (url method &optional other-header content)
   (setq navi2ch-net-last-url url)
@@ -241,8 +242,8 @@ nil なら常に再接続する。")
             file (cdr (assq 'file list))
             port (cdr (assq 'port list))
             host2ch (cdr (assq 'host2ch list))))
-    (when (navi2ch-net-use-proxy-p url)
-;    (when navi2ch-net-http-proxy
+;    (when (navi2ch-net-use-proxy-p url)
+    (when navi2ch-net-http-proxy
       (setq credentials (navi2ch-net-http-basic-credentials
 			 navi2ch-net-http-proxy-userid
 			 navi2ch-net-http-proxy-password)))
