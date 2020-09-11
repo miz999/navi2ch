@@ -350,31 +350,15 @@ START が non-nil ならばレス番号 START からの差分を取得する。
 返り値は HEADER。"
   (let ((file (navi2ch-article-get-file-name board article))
 	(time (cdr (assq 'time article)))
+	(navi2ch-net-http-proxy navi2ch-net-http-proxy-5ch-article-update)
 	url header kako-p)
     (setq url (navi2ch-article-get-url board article))
+    ;;article変換proxyにはhttpのみで接続可
+    (setq url (navi2ch-replace-string "^https:" "http:" url))
     (setq header (if start
 		     (navi2ch-net-update-file-diff url file time)
 		   (navi2ch-net-update-file url file time)))
     (setq kako-p (navi2ch-net-get-state 'error header))
-    ;; (when kako-p
-    ;;   (setq url (navi2ch-article-get-kako-url board article))
-    ;;   (setq header (navi2ch-net-update-file url file))
-      
-    ;;   ;;mimizunから過去ログ取得
-    ;;   (when (and (navi2ch-net-get-state 'error header)
-    ;;     	 (not (member (cdr (assq 'id board)) navi2ch-2ch-mimizun-negative-list))
-    ;;     	 navi2ch-2ch-mimizun
-    ;;     	 (y-or-n-p "みみずんからdatを取得しますか？"))
-    ;;     (let* ((boardid (cdr (assq 'id board)))
-    ;;            (artid (cdr (assq 'artid article))))
-    ;;       (setq url (concat "http://mimizun.com/log/2ch/" boardid "/" artid ".dat"))
-    ;;       (message "mimizun url:%s" url)
-    ;;       (setq header (navi2ch-net-update-file url file))
-    ;;       (if (navi2ch-net-get-state 'error header)
-    ;;           (message "みみずんからも取得できませんでした"))))
-	
-    ;;   (unless (navi2ch-net-get-state 'error header)
-    ;;     (setq header (navi2ch-net-add-state 'kako header))))
     header))
 
 (defun navi2ch-2ch-url-to-board (url)
@@ -451,9 +435,9 @@ START が non-nil ならばレス番号 START からの差分を取得する。
 	   (coding-system (navi2ch-board-get-coding-system board))
 	   (cookies (navi2ch-net-match-cookies url)))
       ;;書き込みはhttpsオンリー
-      (setq url (navi2ch-replace-string "^http" "https" url))
+;      (setq url (navi2ch-replace-string "^http:" "https:" url))
       ;;proxyは使わない。呼び出し側でnavi2ch-net-http-proxyがletバインド
-      (setq navi2ch-net-http-proxy nil)
+;      (setq navi2ch-net-http-proxy nil)
       ;;5ch書き込みにはREADJSというcookieが必要だが、これはjavascriptをパースしないと取得できないので強制付加
       (setq cookies (append cookies '(("READJS" "off"))))
       (dolist (param post)
