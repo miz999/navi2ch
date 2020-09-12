@@ -745,21 +745,8 @@
 	     (goto-char 1)
 	     (re-search-forward replaced-id)
 	     (navi2ch-thumbnail-insert-image w h s url local-file)
-;; 	     (move-beginning-of-line nil)
-;; 	     (insert-image (navi2ch-create-image local-file))
-;; 	     (add-text-properties
-;; 	      (1- (point)) (point)
-;; 	      (list 'link t 'link-head t
-;; 		    'url url
-;; 		    'help-echo local-file
-;; 		    'navi2ch-link-type 'image
-;; 		    'navi2ch-link url
-;; 		    'file-name local-file))
-;; 	     (when (and w h s)
-;; ;	       (message "appspot callback:w:%s h:%s s:%s:%s" w h s url)
-;; 	       (navi2ch-thumbnail-image-prop-list-set url w h s)
-;; 	       (insert (format " (thumb %sx%s:%sk)" w h (round (/ (if (number-or-marker-p s) s (string-to-number s)) 1024)))))
-	     )))))))
+	     (when (and w h s)
+	       (navi2ch-thumbnail-image-prop-list-set url w h s)))))))))
 
 (setq navi2ch-thmbnail-image-prop-list nil)
 (setq navi2ch-thmbnail-image-prop-list (navi2ch-load-info (concat navi2ch-thumbnail-thumbnail-directory "/image-prop.el")))
