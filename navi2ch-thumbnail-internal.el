@@ -83,7 +83,6 @@
 	       filename)
              (copy-file prop-filename filename overwrite)))))
 
-(defvar navi2ch-thumbnail-twitter-use-api t)
 (defun navi2ch-thumbnail-twitter (noexturl ext)
   (let* ((url (concat noexturl "." ext))
         (size-flag "thumb")
@@ -91,10 +90,7 @@
 	(thumb-name (expand-file-name (concat (navi2ch-thumbnail-url-to-file noexturl) "." size-flag "." ext)))
         w h s header)
     (if (not (file-exists-p thumb-name))
-        (progn 
-          (if navi2ch-thumbnail-twitter-use-api
-              (navi2ch-thumbnail-twitter-insert url (point))
-            (navi2ch-thumbnail-get-from-imgserver url size-flag)))
+	(navi2ch-thumbnail-twitter-insert url (point))
       (save-excursion
         (let ((buffer-read-only nil))
           (move-beginning-of-line nil)
