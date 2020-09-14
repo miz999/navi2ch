@@ -74,6 +74,11 @@
 
 (provide 'navi2ch-thumbnail)
 
+(defcustom navi2ch-thumbnail-p t
+  "* サムネイル表示する"
+  :type 'boolean
+  :group 'navi2ch)
+
 (defcustom navi2ch-thumbnail-thumbnail-directory
   (expand-file-name "navi2ch-thumbnails/" navi2ch-directory)
   "* 画像キャッシュディレクトリ"
@@ -207,17 +212,18 @@
 (defun navi2ch-thumbnail-insert-image-reload ()
   "スレが再描画される時にサムネも再描画"
   (interactive)
-  (let (url)
-    (when (display-images-p)
-      (save-excursion
-        (if (not navi2ch-thumbnail-image-url-regex)
-            (navi2ch-thumbnail-image-url-regex-build))
-	(let ((buffer-read-only nil))
-	  (goto-char (point-min))
-	  (while (re-search-forward navi2ch-thumbnail-image-url-regex nil t)
-	    (setq url (match-string 1))
-            (navi2ch-thumbnail-image-pre url nil)))))))
-
+  (when navi2ch-thumbnail-p
+    (let (url)
+      (when (display-images-p)
+	(save-excursion
+	  (if (not navi2ch-thumbnail-image-url-regex)
+	      (navi2ch-thumbnail-image-url-regex-build))
+	  (let ((buffer-read-only nil))
+	    (goto-char (point-min))
+	    (while (re-search-forward navi2ch-thumbnail-image-url-regex nil t)
+	      (setq url (match-string 1))
+	      (navi2ch-thumbnail-image-pre url nil))))))))
+  
 (eval-and-compile
   (defalias 'navi2ch-create-image (if (fboundp 'create-animated-image)
 				      'create-animated-image
