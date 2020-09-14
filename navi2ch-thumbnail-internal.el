@@ -8,6 +8,19 @@
 (defvar navi2ch-browse-local-image-program nil "画像ビューアー")
 (defvar navi2ch-browse-local-image-args nil "画像ビューアーを呼ぶときの引数")
 
+(defvar navi2ch-thumbnail-script-dir (concat default-directory "/thumbnail-script/") "画像取得用スクリプトのあるディレクトリ")
+
+(cond
+ ((equal system-type 'gnu/linux)
+  (setq navi2ch-browse-local-image-program "eog")
+  (defvar curl_imgur_thumb.sh (concat navi2ch-thumbnail-script-dir "curl_imgur_thumb.sh"))
+  (defvar curl_external.sh (concat navi2ch-thumbnail-script-dir "curl_external.sh"))
+  (defvar appspot.sh (concat navi2ch-thumbnail-script-dir "appspot.sh")))
+ ((or (equal system-type 'windows-nt) (equal system-type 'cygwin))
+  (defvar curl_imgur_thumb.sh (concat navi2ch-thumbnail-script-dir "curl_imgur_thumb.bat"))
+  (defvar curl_external.sh (concat navi2ch-thumbnail-script-dir "curl_external.bat"))
+  (defvar appspot.sh (concat navi2ch-thumbnail-script-dir "appspot.bat"))))
+
 (defvar navi2ch-thumbnail-point-list nil)
 (defvar navi2ch-thumbnail-bat-process nil)
 
