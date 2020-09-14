@@ -253,7 +253,7 @@ nil なら常に再接続する。")
       (when (or (not proc)
 		(not (processp proc))
 		(not (memq (process-status proc) '(open run))))
-	(message "Now connecting...")
+	(message "Now connecting %s proxy->%s..." url navi2ch-net-http-proxy)
 	(setq proc nil)
 	(unless (navi2ch-net-down-p host)
 	  (condition-case nil
@@ -262,7 +262,7 @@ nil なら常に再接続する。")
                                       navi2ch-net-connection-name buf host port))
                 (setq proc (funcall navi2ch-open-network-stream-function
                                     navi2ch-net-connection-name buf host port)))
-	    (error (navi2ch-net-add-down-host host)))))
+	    (error (progn (message "down host add %s" host) (navi2ch-net-add-down-host host))))))
       (when proc
 	(with-current-buffer buf
 	  (navi2ch-set-buffer-multibyte nil)
