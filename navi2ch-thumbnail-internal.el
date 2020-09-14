@@ -338,7 +338,6 @@
 	    (setq proc
 		  (start-process (concat "curl-get-image_" fname)
 				 "curl-get-image" curl_external.sh url fname))
-;                               "curl-get-image" (expand-file-name curl_external.sh navi2ch-top-directory ) url (if (eq system-type 'cygwin) (cygwin-convert-file-name-to-windows fname) fname)))
 	    (set-process-filter proc 'navi2ch-thumbnail-imgur-process-callback-external)))))
 
 (defun navi2ch-thumbnail-imgur-process-callback-external (proc result)
@@ -725,7 +724,7 @@
 	 w h s)
     (cond ((string-match "^zero.+" result)
 	   (message "appspot callback abort:%s" result))
-	  ((= (nth 7 (file-attributes local-file)) 0)
+	  ((and (file-exists-p local-file) (= (nth 7 (file-attributes local-file)) 0))
 	   (message "file emtpy: %s" local-file)
 	   (delete-file local-file))
 	  (t 
