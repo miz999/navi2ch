@@ -1,29 +1,25 @@
 ;;; navi2ch-thumbnail-internal.el --- -*- coding: utf-8-unix; -*-
-(require 'cygwin-mount)
+(define-key navi2ch-article-mode-map "." 'navi2ch-thumbnail-show-image-external-full);;普通のサイズの画像表示
+(define-key navi2ch-popup-article-mode-map "." 'navi2ch-thumbnail-show-image-external-full);;オリジナルサイズの画像表示
 
-(setq navi2ch-thumbnail-p t)
+(defvar navi2ch-thumbnail-reduction-width 1200 "画像ビューアーでいい感じの大きさを表示するときの横")
+(defvar navi2ch-thumbnail-reduction-height 800 "画像ビューアーでいい感じの大きさを表示するときの縦")
 
-(define-key navi2ch-article-mode-map "." 'navi2ch-thumbnail-show-image-external-full)
-(define-key navi2ch-popup-article-mode-map "." 'navi2ch-thumbnail-show-image-external-full)
+(defvar navi2ch-browse-local-image-program nil "画像ビューアー")
+(defvar navi2ch-browse-local-image-args nil "画像ビューアーを呼ぶときの引数")
 
-(setq navi2ch-thumbnail-reduction-width 1200)
-(setq navi2ch-thumbnail-reduction-height 800)
+(defvar navi2ch-thumbnail-script-dir (concat default-directory "/thumbnail-script/") "画像取得用スクリプトのあるディレクトリ")
 
-(defvar navi2ch-browse-local-image-program nil)
-(defvar navi2ch-browse-local-image-args nil)
 (cond
  ((equal system-type 'gnu/linux)
   (setq navi2ch-browse-local-image-program "eog")
-  (setq navi2ch-thumbnail-script-dir (concat navi2ch-top-directory "navi2ch-dev/thumbnail-script/"))
-  (setq curl_imgur_thumb.sh (concat navi2ch-thumbnail-script-dir "curl_imgur_thumb.sh"))
-  (setq curl_external.sh (concat navi2ch-thumbnail-script-dir "curl_external.sh"))
-  (setq appspot.sh (concat navi2ch-thumbnail-script-dir "appspot.sh")))
+  (defvar curl_imgur_thumb.sh (concat navi2ch-thumbnail-script-dir "curl_imgur_thumb.sh"))
+  (defvar curl_external.sh (concat navi2ch-thumbnail-script-dir "curl_external.sh"))
+  (defvar appspot.sh (concat navi2ch-thumbnail-script-dir "appspot.sh")))
  ((or (equal system-type 'windows-nt) (equal system-type 'cygwin))
-  (setq navi2ch-thumbnail-script-dir (expand-file-name (concat (getenv "HOMEPATH") "/Dropbox/emacs/navi2ch/navi2ch-dev/thumbnail-script/")))
-  (setq navi2ch-browse-local-image-program (if (eq system-type 'cygwin) (cygwin-convert-file-name-from-windows "c:/Users/miz/Documents/win/MassiGra045/MassiGra.exe") "c:/Users/miz/Documents/win/MassiGra045/MassiGra.exe"))
-  (setq curl_imgur_thumb.sh (concat navi2ch-thumbnail-script-dir "curl_imgur_thumb.bat"))
-  (setq curl_external.sh (concat navi2ch-thumbnail-script-dir "curl_external.bat"))
-  (setq appspot.sh (concat navi2ch-thumbnail-script-dir "appspot.bat"))))
+  (defvar curl_imgur_thumb.sh (concat navi2ch-thumbnail-script-dir "curl_imgur_thumb.bat"))
+  (defvar curl_external.sh (concat navi2ch-thumbnail-script-dir "curl_external.bat"))
+  (defvar appspot.sh (concat navi2ch-thumbnail-script-dir "appspot.bat"))))
 
 (defvar navi2ch-thumbnail-point-list nil)
 (defvar navi2ch-thumbnail-bat-process nil)
@@ -100,24 +96,14 @@
 	       filename)
              (copy-file prop-filename filename overwrite)))))
 
-(defvar navi2ch-thumbnail-twitter-use-api t)
 (defun navi2ch-thumbnail-twitter (noexturl ext)
   (let* ((url (concat noexturl "." ext))
         (size-flag "thumb")
         (fname (expand-file-name (navi2ch-thumbnail-url-to-file url)))
-;        (fname (expand-file-name (concat (navi2ch-thumbnail-url-to-file noexturl) "." ext)))
 	(thumb-name (expand-file-name (concat (navi2ch-thumbnail-url-to-file noexturl) "." size-flag "." ext)))
         w h s header)
-    ;; (when (setq prop-list (navi2ch-thumbnail-image-prop-list-get url))
-    ;;   (message "navi2ch-thumbnail-twimg prop-list-get" )
-    ;;       (setq w (nth 1 prop-list))
-    ;;       (setq h (nth 2 prop-list)) 
-    ;;       (setq s (nth 3 prop-list)))
     (if (not (file-exists-p thumb-name))
-        (progn 
-          (if navi2ch-thumbnail-twitter-use-api
-              (navi2ch-thumbnail-twitter-insert url (point))
-            (navi2ch-thumbnail-get-from-imgserver url size-flag)))
+	(navi2ch-thumbnail-twitter-insert url (point))
       (save-excursion
         (let ((buffer-read-only nil))
           (move-beginning-of-line nil)
@@ -125,16 +111,14 @@
           (add-text-properties (1- (point)) (point)
                                (list 'link t 'link-head t
                                      'url url
-;				     'help-echo thumb-name
                                      'navi2ch-link-type 'image 'navi2ch-link fname 'file-name thumb-name)))))))
 
+(require 'cygwin-mount)
 (defun navi2ch-thumbnail-cygwin-to-win (path)
   (if (eq system-type 'cygwin) (cygewin-convert-file-name-to-windows path) path))
   
 (defmacro navi2ch-thumbnail-cygwin-to-win-setq-macro (path)
   (list 'setq path (list 'if '(eq system-type cygwin) '(cygwin-convert-file-name-to-windows path) path)))
-
-;(macroexpand '(navi2ch-thumbnail-cygwin-win-macro 'local-file))
 
 (defun navi2ch-thumbnail-twitter-insert (url buffer-point)
   (navi2ch-thumbnail-process-count-up)
@@ -338,7 +322,6 @@
 	    (setq proc
 		  (start-process (concat "curl-get-image_" fname)
 				 "curl-get-image" curl_external.sh url fname))
-;                               "curl-get-image" (expand-file-name curl_external.sh navi2ch-top-directory ) url (if (eq system-type 'cygwin) (cygwin-convert-file-name-to-windows fname) fname)))
 	    (set-process-filter proc 'navi2ch-thumbnail-imgur-process-callback-external)))))
 
 (defun navi2ch-thumbnail-imgur-process-callback-external (proc result)
@@ -725,7 +708,7 @@
 	 w h s)
     (cond ((string-match "^zero.+" result)
 	   (message "appspot callback abort:%s" result))
-	  ((= (nth 7 (file-attributes local-file)) 0)
+	  ((and (file-exists-p local-file) (= (nth 7 (file-attributes local-file)) 0))
 	   (message "file emtpy: %s" local-file)
 	   (delete-file local-file))
 	  (t 
