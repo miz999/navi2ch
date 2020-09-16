@@ -557,61 +557,33 @@
 	  (string-match "src=\"\\(https?://pbs\.twimg\.com/media/.+\.\\(jpg\\|png\\)\\)\"" cont)
 	  (navi2ch-thumbnail-twitter (match-string 1 cont) (match-string 2 cont))))
 
-;       ((string-match "h?t?tps?://twitter.com/.+/status/[0-9]+/photo/1" url)
-;	(when (setq twimg-url (navi2ch-thumbnail-twitter url))
-;	  (string-match (concat "\\(https?://pbs\.twimg\.com/media/[^:#]+\\)\."  (regexp-opt navi2ch-browse-url-image-extentions t) ":?\\(.*\\)$") twimg-url)
-;	  (message "twimg: %s %s" (match-string 1 twimg-url) (match-string 2 twimg-url))
+       ;;imepic(誰も使ってない？)
+       ((string-match "h?ttp://imepic\\.jp/[0-9/]+" url)
+	(if (not (file-exists-p (concat (navi2ch-thumbnail-url-to-file url) ".thumb.jpg")))
+	    (progn 
+	      (navi2ch-thumbnail-get-from-imgserver url))
+	  (navi2ch-thumbnail-insert-image nil nil nil (concat (navi2ch-thumbnail-url-to-file url) ".thumb.jpg") nil)))
 
-     ;;imepic(誰も使ってない？)
-     ((string-match "h?ttp://imepic\\.jp/[0-9/]+" url)
-      (if (not (file-exists-p (concat (navi2ch-thumbnail-url-to-file url) ".thumb.jpg")))
-          (progn 
-            (navi2ch-thumbnail-get-from-imgserver url))
-        (navi2ch-thumbnail-insert-image nil nil nil (concat (navi2ch-thumbnail-url-to-file url) ".thumb.jpg") nil)))
-
-     ;;お絵描き(サービス停止？)
-     ((string-match "sssp://o.5ch.net/" url)
-      (message "5chお絵描き機能:%s" url)
-      (let ((fname (navi2ch-thumbnail-url-to-file url))
-	    (link-type (get-text-property (point) 'face)))
-	(unless (file-exists-p fname)
-	  (navi2ch-net-update-file url fname nil nil nil nil nil))
-	(when fname
-	  (save-excursion
-	    (let ((buffer-read-only nil))
-	      (move-beginning-of-line nil)
-	      (insert-image (navi2ch-create-image fname))
-	      (add-text-properties
-	       (1- (point)) (point)
-	       (list 'link t 'link-head t
-		     'url url 'help-echo fname
-		     'navi2ch-link-type 'image 'navi2ch-link url 'file-name fname)))))))
+       ;;お絵描き(サービス停止？)
+       ((string-match "sssp://o.5ch.net/" url)
+	(message "5chお絵描き機能:%s" url)
+	(let ((fname (navi2ch-thumbnail-url-to-file url))
+	      (link-type (get-text-property (point) 'face)))
+	  (unless (file-exists-p fname)
+	    (navi2ch-net-update-file url fname nil nil nil nil nil))
+	  (when fname
+	    (save-excursion
+	      (let ((buffer-read-only nil))
+		(move-beginning-of-line nil)
+		(insert-image (navi2ch-create-image fname))
+		(add-text-properties
+		 (1- (point)) (point)
+		 (list 'link t 'link-head t
+		       'url url 'help-echo fname
+		       'navi2ch-link-type 'image 'navi2ch-link url 'file-name fname)))))))
      
-     ((and (not (string-match "https?://.+/.+\.gif$" url))
-	   (string-match "https?://.+/.+\..+$" url))
-;      (let ((target-list nil)
-;            (cache-file (navi2ch-thumbnail-url-to-file url))
-;            (real-image-url url)
-;            rtn)
-
-        ;; ;;imepic等のURLが画像っぽくない場合の処理
-        ;; (dolist (l navi2ch-thumbnail-url-conversion-table)
-        ;;   (setq url-regex (nth 0 l))
-        ;;   (setq ext (nth 1 l))
-        ;;   (when (string-match url-regex url)
-        ;;     (setq target-list l)
-        ;;     (if ext
-        ;;         (setq cache-file (concat cache-file ext)))))
-
-        ;; (if real-image-url
-        ;;     (progn 
-        ;;     ;;キャッシュがある場合はキャッシュ表示
-        ;;     (setq rtn (navi2ch-thumbnail-insert-image-cache 
-        ;;                (if (and target-list (not (file-exists-p (concat cache-file ".jpg"))))
-        ;;                    (funcall (nth 2 target-list) real-image-url
-        ;;                             (nth 0 target-list) (nth 3 target-list))
-        ;;                  url)
-        ;;                cache-file))))
+       ((and (not (string-match "https?://.+/.+\.gif$" url))
+	     (string-match "https?://.+/.+\..+$" url))
 	(navi2ch-thumbnail-insert-image-cache url))))))
 
 (defun navi2ch-thumbnail-insert-image-cache (url)
