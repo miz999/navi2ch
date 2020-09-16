@@ -258,7 +258,7 @@ nil なら常に再接続する。")
 	(unless (navi2ch-net-down-p host)
 	  (condition-case nil
               (if (string-match "^https://" url)
-                  (setq proc (funcall 'open-gnutls-stream
+                  (setq proc (open-gnutls-stream
                                       navi2ch-net-connection-name buf host port))
                 (setq proc (funcall navi2ch-open-network-stream-function
                                     navi2ch-net-connection-name buf host port)))
