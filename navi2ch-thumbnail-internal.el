@@ -775,5 +775,3 @@
            (concat file ".jpg"))
           (t
            file))))
-
-(load "imgur.el")

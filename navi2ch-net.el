@@ -264,7 +264,7 @@ nil なら常に再接続する。")
                                     navi2ch-net-connection-name buf host port)))
 	    ;;なぜかgnutlsが安定するまでnavi2ch起動後5分位かかる(ubuntu20.04)
 	    ;;その間、サーバに接続できないので落ちてるホストに入れられる
-	    (error (progn (message "hostt %s down. add to navi2ch-net-down-host-alist" host) (navi2ch-net-add-down-host host))))))
+	    (error (progn (message "host %s down. add to navi2ch-net-down-host-alist" host) (navi2ch-net-add-down-host host))))))
       (when proc
 	(with-current-buffer buf
 	  (navi2ch-set-buffer-multibyte nil)
