@@ -570,8 +570,8 @@
         (navi2ch-thumbnail-insert-image nil nil nil (concat (navi2ch-thumbnail-url-to-file url) ".thumb.jpg") nil)))
 
      ;;お絵描き(サービス停止？)
-     ((string-match "//o.8ch.net/" url)
-      (message "8ch.net pass:%s" url)
+     ((string-match "sssp://o.5ch.net/" url)
+      (message "5chお絵描き機能:%s" url)
       (let ((fname (navi2ch-thumbnail-url-to-file url))
 	    (link-type (get-text-property (point) 'face)))
 	(unless (file-exists-p fname)
