@@ -53,7 +53,7 @@
 (defvar navi2ch-browse-local-image-program nil "画像ビューアー")
 (defvar navi2ch-browse-local-image-args nil "画像ビューアーを呼ぶときの引数")
 
-(defvar navi2ch-thumbnail-script-dir (concat default-directory "/thumbnail-script/") "画像取得用スクリプトのあるディレクトリ")
+(defvar navi2ch-thumbnail-script-dir "~/navi2ch/navi2ch-dev/thumbnail-script/" "画像取得用スクリプトのあるディレクトリ")
 
 (cond
  ((equal system-type 'gnu/linux)
