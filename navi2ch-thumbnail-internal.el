@@ -1,4 +1,13 @@
 ;;; navi2ch-thumbnail-internal.el --- -*- coding: utf-8-unix; -*-
+
+(provide 'navi2ch-thumbnail)
+
+(defcustom navi2ch-thumbnail-thumbnail-directory
+  (expand-file-name "navi2ch-thumbnails/" navi2ch-directory)
+  "* 画像キャッシュディレクトリ"
+  :type 'string
+  :group 'navi2ch)
+
 (define-key navi2ch-article-mode-map "." 'navi2ch-thumbnail-show-image-external-full);;普通のサイズの画像表示
 (define-key navi2ch-popup-article-mode-map "." 'navi2ch-thumbnail-show-image-external-full);;オリジナルサイズの画像表示
 
@@ -707,8 +716,9 @@
 		   (when (and w h s)
 		     (navi2ch-thumbnail-image-prop-list-set url w h s))))))))))
 
-(setq navi2ch-thmbnail-image-prop-list nil)
-(setq navi2ch-thmbnail-image-prop-list (navi2ch-load-info (concat navi2ch-thumbnail-thumbnail-directory "/image-prop.el")))
+(defvar navi2ch-thmbnail-image-prop-list nil "画像のプロパティを保存しておくリスト")
+(defvar navi2ch-thumbnail-image-prop-list-file-name (concat navi2ch-thumbnail-thumbnail-directory "image-prop.el")
+  "画像のプロパティを保存しておくファイル")
 
 (defun navi2ch-thumbnail-image-prop-list-set (url w h size)
   (if (navi2ch-thumbnail-image-prop-list-get url)
@@ -716,9 +726,13 @@
   (setq navi2ch-thmbnail-image-prop-list
         (cons (list url w h size) navi2ch-thmbnail-image-prop-list))))
 
+(add-hook 'navi2ch-hook 'navi2ch-thumbnail-load-image-prop)
+(defun navi2ch-thumbnail-load-image-prop ()
+  (setq navi2ch-thmbnail-image-prop-list (navi2ch-load-info navi2ch-thumbnail-image-prop-list-file-name)))
+
 (add-hook 'navi2ch-exit-hook 'navi2ch-thumbnail-save-image-prop)
 (defun navi2ch-thumbnail-save-image-prop ()
-  (navi2ch-save-info (concat navi2ch-thumbnail-thumbnail-directory "/image-prop.el") navi2ch-thmbnail-image-prop-list))
+  (navi2ch-save-info navi2ch-thumbnail-image-prop-list-file-name navi2ch-thmbnail-image-prop-list))
 
 (defun navi2ch-thumbnail-image-prop-list-get (url)
   (assoc url navi2ch-thmbnail-image-prop-list))
