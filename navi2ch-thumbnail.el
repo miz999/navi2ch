@@ -281,16 +281,16 @@
 ;; 	   0)))
 ;;   (copy-file cache-filename filename overwrite))
 
-;; (defun navi2ch-thumbnail-show-image-external ()
-;;   "外部ビューアーで表示"
-;;   (interactive)
-;;   (let ((type (car (get-text-property (point) 'display)))
-;; 	(prop (get-text-property (point) 'navi2ch-link)))
-;;     (when (eq type 'image)
-;;       (navi2ch-browse-url-image
-;;        (if (eq system-type 'windows-nt)
-;; 	   (navi2ch-replace-string "/" "\\\\" prop t)
-;; 	 prop)))))
+(defun navi2ch-thumbnail-show-image-external ()
+  "外部ビューアーで表示"
+  (interactive)
+  (let ((type (car (get-text-property (point) 'display)))
+	(prop (get-text-property (point) 'navi2ch-link)))
+    (when (eq type 'image)
+      (navi2ch-browse-url-image
+       (if (eq system-type 'windows-nt)
+	   (navi2ch-replace-string "/" "\\\\" prop t)
+	 prop)))))
 
 (defun navi2ch-thumbnail-image-delete-cache ()
   "取得した画像を削除。キャッシュが無くなるの表示されなくなる"
