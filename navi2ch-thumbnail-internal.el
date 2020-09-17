@@ -1,6 +1,42 @@
-;;; navi2ch-thumbnail-internal.el --- -*- coding: utf-8-unix; -*-
+;;; navi2ch-thumbnail-internal.el --- thumbnail view for navi2ch -*- coding: utf-8-unix; -*-
+;; Copyright (C) 2020 by Navi2ch Project
+
+;; Authors: MIZUNUMA Yuto <mizmiz@users.sourceforge.net>
+;; Keywords: network 2ch
+
+;; This file is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 2, or (at your option)
+;; any later version.
+
+;; This file is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with GNU Emacs; see the file COPYING.  If not, write to
+;; the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
+
+;;; Commentary:
+
+;; サムネイルを表示する機能です
+;; 画像表示に対応したemacsで動きます
+
+;; 画像リンクURL上で','を押すとサムネイル画像を挿入表示します。自動取得、
+;; 自動表示はしません。基本的にキーで駆動です。キャッシュを持っている画
+;; 像は自動表示されます。キャッシュの自動削除機能はありません。
+;;
+
+;;; Code
 
 (provide 'navi2ch-thumbnail)
+
+(defcustom navi2ch-thumbnail-p t
+  "* サムネイル表示する"
+  :type 'boolean
+  :group 'navi2ch)
 
 (defcustom navi2ch-thumbnail-thumbnail-directory
   (expand-file-name "navi2ch-thumbnails/" navi2ch-directory)
@@ -29,6 +65,21 @@
   (defvar curl_imgur_thumb.sh (concat navi2ch-thumbnail-script-dir "curl_imgur_thumb.bat"))
   (defvar curl_external.sh (concat navi2ch-thumbnail-script-dir "curl_external.bat"))
   (defvar appspot.sh (concat navi2ch-thumbnail-script-dir "appspot.bat"))))
+
+(defun navi2ch-thumbnail-insert-image-reload ()
+  "スレが再描画される時にサムネも再描画"
+  (interactive)
+  (when navi2ch-thumbnail-p
+    (let (url)
+      (when (display-images-p)
+	(save-excursion
+	  (if (not navi2ch-thumbnail-image-url-regex)
+	      (navi2ch-thumbnail-image-url-regex-build))
+	  (let ((buffer-read-only nil))
+	    (goto-char (point-min))
+	    (while (re-search-forward navi2ch-thumbnail-image-url-regex nil t)
+	      (setq url (match-string 1))
+	      (navi2ch-thumbnail-image-pre url nil))))))))
 
 (defvar navi2ch-thumbnail-point-list nil)
 (defvar navi2ch-thumbnail-bat-process nil)
@@ -194,7 +245,7 @@
           (setq w (nth 1 prop-list))
           (setq h (nth 2 prop-list)) 
           (setq s (nth 3 prop-list)))
-      (when (and (file-exists-p target-file) (navi2ch-thumbnail-json-p target-file))
+      (when (and (file-exists-p target-file) (navi2ch-thumbnail-imagur-json-p target-file))
 	(let ((imgur-json (json-read-file target-file)))
 	  (setq w (cdr (assoc 'width (cdr (assoc 'data imgur-json)))))
 	  (setq h (cdr (assoc 'height (cdr (assoc 'data imgur-json)))))
@@ -221,7 +272,7 @@
       (when (and w h s)
         (insert (format " (thumb %sx%s:%sk)" w h (round (/ (if (number-or-marker-p s)s (string-to-number s)) 1024))))))))
 
-(defun navi2ch-thumbnail-json-p (file)
+(defun navi2ch-thumbnail-imgur-json-p (file)
     (not (with-temp-buffer
 	   (insert-file-contents file)
 	   (goto-char (point-min))
@@ -229,7 +280,8 @@
 		  "<title>imgur: the simple 404 page</title>"
 		  nil t)
 	     (message "%s 404 error file delete" file)
-	     (delete-file file)))))
+	     (delete-file file)
+	     nil))))
 
 (defun navi2ch-thumbnail-imgur-insert-thumbnail-curl (id ext)
   (navi2ch-thumbnail-process-count-up)
