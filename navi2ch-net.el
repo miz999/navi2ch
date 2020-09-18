@@ -253,16 +253,18 @@ nil なら常に再接続する。")
       (when (or (not proc)
 		(not (processp proc))
 		(not (memq (process-status proc) '(open run))))
-	(message "Now connecting...")
+	(message "Now connecting to %s proxy->%s..." host navi2ch-net-http-proxy)
 	(setq proc nil)
 	(unless (navi2ch-net-down-p host)
 	  (condition-case nil
               (if (string-match "^https://" url)
-                  (setq proc (funcall 'open-tls-stream
+                  (setq proc (open-gnutls-stream
                                       navi2ch-net-connection-name buf host port))
                 (setq proc (funcall navi2ch-open-network-stream-function
                                     navi2ch-net-connection-name buf host port)))
-	    (error (navi2ch-net-add-down-host host)))))
+	    ;;なぜかgnutlsが安定するまでnavi2ch起動後5分位かかる(ubuntu20.04)
+	    ;;その間、サーバに接続できないので落ちてるホストに入れられる
+	    (error (progn (message "host %s down. add to navi2ch-net-down-host-alist" host) (navi2ch-net-add-down-host host))))))
       (when proc
 	(with-current-buffer buf
 	  (navi2ch-set-buffer-multibyte nil)
@@ -932,8 +934,9 @@ This is taken from RFC 2396.")
 	 (host (cdr (assq 'host alist)))
 	 (file (cdr (assq 'file alist)))
 	 (domain-list (navi2ch-net-cookie-domains host))
-	 (path-list (navi2ch-net-cookie-paths file)))
-    (dolist (pair (navi2ch-net-get-header proc) navi2ch-net-cookies)
+	 (path-list (navi2ch-net-cookie-paths file))
+	 (header (if (listp proc) proc (navi2ch-net-get-header proc))))
+    (dolist (pair header navi2ch-net-cookies)
       (when (eq (car pair) 'set-cookie)
 	(let* ((str (cdr pair))
 	       (date (when (string-match "expires=\\([^;]+\\)" str)
