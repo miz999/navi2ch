@@ -245,7 +245,7 @@
           (setq w (nth 1 prop-list))
           (setq h (nth 2 prop-list)) 
           (setq s (nth 3 prop-list)))
-      (when (and (file-exists-p target-file) (navi2ch-thumbnail-imagur-json-p target-file))
+      (when (and (file-exists-p target-file) (navi2ch-thumbnail-imgur-json-p target-file))
 	(let ((imgur-json (json-read-file target-file)))
 	  (setq w (cdr (assoc 'width (cdr (assoc 'data imgur-json)))))
 	  (setq h (cdr (assoc 'height (cdr (assoc 'data imgur-json)))))
