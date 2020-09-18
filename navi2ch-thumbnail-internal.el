@@ -44,6 +44,16 @@
   :type 'string
   :group 'navi2ch)
 
+(defcustom navi2ch-thumbnail-thumbsize-width 300
+  "* サムネイル表示サイズ横(等倍縮小でアスペクト比保持)"
+  :type 'integer
+  :group 'navi2ch)
+
+(defcustom navi2ch-thumbnail-thumbsize-height 150
+  "* サムネイル表示サイズ縦(等倍縮小でアスペクト比保持)"
+  :type 'integer
+  :group 'navi2ch)
+
 (define-key navi2ch-article-mode-map "." 'navi2ch-thumbnail-show-image-external-full);;普通のサイズの画像表示
 (define-key navi2ch-popup-article-mode-map "." 'navi2ch-thumbnail-show-image-external-full);;オリジナルサイズの画像表示
 
@@ -66,6 +76,9 @@
   (defvar curl_external.sh (concat navi2ch-thumbnail-script-dir "curl_external.bat"))
   (defvar appspot.sh (concat navi2ch-thumbnail-script-dir "appspot.bat"))))
 
+(defvar navi2ch-thumbnail-image-url-regex
+  "\\(h?t?tps?://[^ 　\t\n\r]+\\.\\(gif\\|jpe?g\\|png\\)\\)" "articleから画像らしきリンクを探すregexを1行にまとめる")
+
 (defun navi2ch-thumbnail-insert-image-reload ()
   "スレが再描画される時にサムネも再描画"
   (interactive)
@@ -73,8 +86,6 @@
     (let (url)
       (when (display-images-p)
 	(save-excursion
-	  (if (not navi2ch-thumbnail-image-url-regex)
-	      (navi2ch-thumbnail-image-url-regex-build))
 	  (let ((buffer-read-only nil))
 	    (goto-char (point-min))
 	    (while (re-search-forward navi2ch-thumbnail-image-url-regex nil t)
