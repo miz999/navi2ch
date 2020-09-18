@@ -123,11 +123,11 @@
   :type '(radio (const :format "-sample (高速)"  "-sample")
 		(const :format "-resize (高画質)" "-resize")))
 
-(defvar navi2ch-thumbnail-404-list
-  (list "/404\.s?html$"
-	"10mai_404\.html$"))
+;; (defvar navi2ch-thumbnail-404-list
+;;   (list "/404\.s?html$"
+;; 	"10mai_404\.html$"))
 
-(defvar navi2ch-thumbnail-enable-status-check t)
+;(defvar navi2ch-thumbnail-enable-status-check t)
 
 (defvar navi2ch-thumbnail-url-conversion-table
       '(
@@ -160,9 +160,9 @@
 
     ;;キャッシュが無いので取得
     (when (and (not rtn) force)
-      (dolist (l navi2ch-thumbnail-404-list)
-        (when (string-match l real-image-url)
-          (error "ファイルが404 url=%s" url)))
+      ;; (dolist (l navi2ch-thumbnail-404-list)
+      ;;   (when (string-match l real-image-url)
+      ;;     (error "ファイルが404 url=%s" url)))
       ;;URL書き換えが必要な場合
       (if target-list
           (setq real-image-url (funcall (nth 2 target-list) url (nth 0 target-list) (nth 3 target-list))))
