@@ -129,17 +129,17 @@
 
 ;(defvar navi2ch-thumbnail-enable-status-check t)
 
-(defvar navi2ch-thumbnail-url-conversion-table
-      '(
-        ("h?ttp://imepic\\.jp/\\([0-9/]+\\)" ".jpg" navi2ch-thumbnail-imepic "http://img1.imepic.jp/image/")
-        ("h?t?tps?://twitter.com/.+/status/[0-9]+/photo/1" ".jpg" navi2ch-thumbnail-twitter nil)
-  )
-      "リスト構造
-  0:対象URL正規表現
-  1:必要ならば付加拡張子(拡張子無しだと画像ビューアーが種類の判別ミスをする)
-  2:置換処理関数(2段階の取得プロセスが必要な場合)
-  3:置換正規表現(上記0で拾った正規表現を末尾に付加)"
-)
+;; (defvar navi2ch-thumbnail-url-conversion-table
+;;       '(
+;;         ("h?ttp://imepic\\.jp/\\([0-9/]+\\)" ".jpg" navi2ch-thumbnail-imepic "http://img1.imepic.jp/image/")
+;;         ("h?t?tps?://twitter.com/.+/status/[0-9]+/photo/1" ".jpg" navi2ch-thumbnail-twitter nil)
+;;   )
+;;       "リスト構造
+;;   0:対象URL正規表現
+;;   1:必要ならば付加拡張子(拡張子無しだと画像ビューアーが種類の判別ミスをする)
+;;   2:置換処理関数(2段階の取得プロセスが必要な場合)
+;;   3:置換正規表現(上記0で拾った正規表現を末尾に付加)"
+;; )
 
 
 (defun navi2ch-thumbnail-image-pre (url &optional force)
@@ -147,27 +147,30 @@
   (let ((rtn nil) (real-image-url url) (target-list nil) (cache-url url))
     
     ;;imepic等のURLが画像っぽくない場合の処理
-    (dolist (l navi2ch-thumbnail-url-conversion-table)
-      (setq url-regex (nth 0 l))
-      (setq ext (nth 1 l))
-      (when (string-match url-regex url)
-        (setq target-list l)
-        (if ext
-            (setq cache-url (concat url ext)))))
+    ;; (dolist (l navi2ch-thumbnail-url-conversion-table)
+    ;;   (setq url-regex (nth 0 l))
+    ;;   (setq ext (nth 1 l))
+    ;;   (when (string-match url-regex url)
+    ;;     (setq target-list l)
+    ;;     (if ext
+    ;;         (setq cache-url (concat url ext)))))
 
-    ;;キャッシュがある場合はキャッシュ表示
-    (setq rtn (navi2ch-thumbnail-insert-image-cache cache-url))
+    ;;キャッシュがある場合はキャッシュ表示。キャッシュがなくてforceの場合は自動連続取得
+    (when (and force (not (navi2ch-thumbnail-insert-image-cache cache-url)))
+	   (navi2ch-thumbnail-show-image url url))
 
     ;;キャッシュが無いので取得
-    (when (and (not rtn) force)
-      ;; (dolist (l navi2ch-thumbnail-404-list)
-      ;;   (when (string-match l real-image-url)
-      ;;     (error "ファイルが404 url=%s" url)))
-      ;;URL書き換えが必要な場合
-      (if target-list
-          (setq real-image-url (funcall (nth 2 target-list) url (nth 0 target-list) (nth 3 target-list))))
-      (setq rtn (navi2ch-thumbnail-show-image real-image-url cache-url url))
-    rtn )))
+    ;; (when (and (not rtn) force)
+    ;;   ;; (dolist (l navi2ch-thumbnail-404-list)
+    ;;   ;;   (when (string-match l real-image-url)
+    ;;   ;;     (error "ファイルが404 url=%s" url)))
+    ;;   ;;URL書き換えが必要な場合
+    ;;   (if target-list
+    ;;       (setq real-image-url (funcall (nth 2 target-list) url (nth 0 target-list) (nth 3 target-list))))
+    ;;   (setq rtn (navi2ch-thumbnail-show-image real-image-url cache-url url))
+    ;;   (setq rtn (navi2ch-thumbnail-show-image real-image-url cache-url url))
+    ;;    rtn )))
+   ))
 
 ;; (defun navi2ch-thumbnail-url-replace (url regex-src-url regex-dist-url)
 ;;   "URLの単純置換"
@@ -175,16 +178,16 @@
 ;;   (message "%s" regex-dist-url)
 ;;   (concat regex-dist-url (match-string 1 url)))
 
-(defun navi2ch-thumbnail-imepic (url regex-src-url regex-dist-url)
-  "imepicの場合の画像を取得"
-  (let ((proc (navi2ch-net-send-request
-               url
-               "GET"))
-        cont)
-    (setq cont (navi2ch-net-get-content proc))
-    (if (string-match "\\(http://img[0-9]\.imepic\.jp/image/[0-9]+/[0-9]+\.\\(gif\\|jpe?g\\|png\\)\?.+\\)\"" cont)
-        (match-string 1 cont)
-      (error "can't get imepic image from %s" url))))
+;; (defun navi2ch-thumbnail-imepic (url regex-src-url regex-dist-url)
+;;   "imepicの場合の画像を取得"
+;;   (let ((proc (navi2ch-net-send-request
+;;                url
+;;                "GET"))
+;;         cont)
+;;     (setq cont (navi2ch-net-get-content proc))
+;;     (if (string-match "\\(http://img[0-9]\.imepic\.jp/image/[0-9]+/[0-9]+\.\\(gif\\|jpe?g\\|png\\)\?.+\\)\"" cont)
+;;         (match-string 1 cont)
+;;       (error "can't get imepic image from %s" url))))
 
 (defun navi2ch-thumbnail-twitter (url &optional dummy0 dummy1)
   "twitter画像の場合の画像を取得"
@@ -197,17 +200,17 @@
         (setq twitter-img (match-string 1 cont))
       (error "can't get image url from %s" url))))
 
-;;articleから画像らしきリンクを探すregexを1行にまとめる
-(defvar navi2ch-thumbnail-image-url-regex nil)
+(defvar navi2ch-thumbnail-image-url-regex
+  "\\(h?t?tps?://[^ 　\t\n\r]+\\.\\(gif\\|jpe?g\\|png\\)\\)" "articleから画像らしきリンクを探すregexを1行にまとめる")
 
-(defun navi2ch-thumbnail-image-url-regex-build ()
-  "articleから画像らしきリンクを探すregexを1行にまとめる"
-  (setq navi2ch-thumbnail-image-url-regex
-        (concat "\\("
-                (mapconcat (function (lambda (x) (nth 0 x)))
-                           navi2ch-thumbnail-url-conversion-table "\\|")
-                "\\|h?t?tps?://[^ 　\t\n\r]+\\.\\(gif\\|jpe?g\\|png\\)"
-                "\\)")))
+;; (defun navi2ch-thumbnail-image-url-regex-build ()
+;;   "articleから画像らしきリンクを探すregexを1行にまとめる"
+;;   (setq navi2ch-thumbnail-image-url-regex
+;;         (concat "\\("
+;;                 (mapconcat (function (lambda (x) (nth 0 x)))
+;;                            navi2ch-thumbnail-url-conversion-table "\\|")
+;;                 "\\|h?t?tps?://[^ 　\t\n\r]+\\.\\(gif\\|jpe?g\\|png\\)"
+;;                 "\\)")))
 
 (defun navi2ch-thumbnail-insert-image-reload ()
   "スレが再描画される時にサムネも再描画"
@@ -216,8 +219,8 @@
     (let (url)
       (when (display-images-p)
 	(save-excursion
-	  (if (not navi2ch-thumbnail-image-url-regex)
-	      (navi2ch-thumbnail-image-url-regex-build))
+;;	  (if (not navi2ch-thumbnail-image-url-regex)
+;;	      (navi2ch-thumbnail-image-url-regex-build))
 	  (let ((buffer-read-only nil))
 	    (goto-char (point-min))
 	    (while (re-search-forward navi2ch-thumbnail-image-url-regex nil t)
