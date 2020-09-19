@@ -550,6 +550,24 @@
   (interactive)
   (navi2ch-thumbnail-show-image-external 'full))
 
+(defun navi2ch-thumbnail-select-current-link (&optional browse-p)
+  (interactive "P")
+  (let ((type (get-text-property (point) 'navi2ch-link-type))
+	(prop (get-text-property (point) 'navi2ch-link))
+	url)
+    (cond
+     ((eq type 'url)
+      (cond
+       ((and (not (navi2ch-thumbnail-image-shown-p))
+             (string-match navi2ch-thumbnail-image-url-regex prop))
+        (navi2ch-thumbnail-image-pre prop t))
+
+       ((and (file-name-extension prop)
+	     (member (downcase (file-name-extension prop))
+		     navi2ch-browse-url-image-extentions)))))
+     ((eq type 'image)
+      (navi2ch-thumbnail-show-image-external)))))
+
 (defun navi2ch-thumbnail-show-image-external (&optional mode)
   (let* ((type (car (get-text-property (point) 'display)))
 	(prop (get-text-property (point) 'navi2ch-link))
