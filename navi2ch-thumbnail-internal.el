@@ -178,7 +178,7 @@
       (save-excursion
         (let ((buffer-read-only nil))
           (move-beginning-of-line nil)
-          (insert-image (navi2ch-create-image thumb-name))
+          (insert-image (create-image thumb-name))
           (add-text-properties (1- (point)) (point)
                                (list 'link t 'link-head t
                                      'url url
@@ -275,7 +275,7 @@
   (save-excursion
     (let ((buffer-read-only nil))
       (move-beginning-of-line nil)
-      (insert-image (navi2ch-create-image thumb-fname))
+      (insert-image (create-image thumb-fname))
       (add-text-properties (1- (point)) (point)
                            (list 'link t 'link-head t 'url url
                                  'navi2ch-link-type 'image 'navi2ch-link (navi2ch-thumbnail-url-to-file url)
@@ -499,7 +499,7 @@
                         (message "x-image-deny: %s" (cdr (assq 'X-IMAGE-DENY header)))
                         (insert " (deny image)"))                       
                        (t
-                         (insert-image (navi2ch-create-image fname))
+                         (insert-image (create-image fname))
                         (add-text-properties
                          (1- (point)) (point)
                          (list 'link t 'link-head t
@@ -647,7 +647,7 @@
 	    (save-excursion
 	      (let ((buffer-read-only nil))
 		(move-beginning-of-line nil)
-		(insert-image (navi2ch-create-image fname))
+		(insert-image (create-image fname))
 		(add-text-properties
 		 (1- (point)) (point)
 		 (list 'link t 'link-head t
@@ -679,7 +679,7 @@
 ;					  'imagemagick nil
 ;					  :width navi2ch-thumbnail-thumbsize-width
 ;					  :height navi2ch-thumbnail-thumbsize-height)
-	   (navi2ch-create-image thumb))
+	   (create-image thumb))
 	(add-text-properties
 	 (1- (point)) (point)
 	 (list 'link t 'link-head t
