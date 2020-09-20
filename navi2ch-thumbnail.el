@@ -156,7 +156,7 @@
     ;;         (setq cache-url (concat url ext)))))
 
     ;;キャッシュがある場合はキャッシュ表示。キャッシュがなくてforceの場合は自動連続取得
-    (when (and force (not (navi2ch-thumbnail-insert-image-cache cache-url)))
+    (when (and (not (navi2ch-thumbnail-insert-image-cache cache-url)) force)
 	   (navi2ch-thumbnail-show-image url url))
 
     ;;キャッシュが無いので取得
