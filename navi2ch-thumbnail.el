@@ -406,7 +406,7 @@
 		   (match-string 1 org-url))
 		  thumb-dir))
       (setq thumb-file (concat file ".jpg"))
-      (when (navi2ch-net-update-file url file nil nil nil nil
+      (when (navi2ch-net-update-file url file nil nil t nil
 				     (when referer
 				       (list (cons "Referer" referer))))
 	(unless (file-exists-p file)

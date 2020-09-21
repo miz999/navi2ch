@@ -569,6 +569,8 @@ OTHER-HEADER が `non-nil' ならばリクエストにこのヘッダを追加する。
 	      (message "%snot updated" (current-message)))
 	     ((string= status "302")
 	      (message "%smoved" (current-message)))
+	     ((string= status "301")
+	      (message "%smoved permanently" (current-message)))
 	     ((string= status "500")
 	      (message "%s cloudflare error" (current-message))
 	      (setq proc nil))
@@ -626,6 +628,7 @@ OTHER-HEADER は `navi2ch-net-download-file' に渡される。
       (setq redo nil
 	    proc (navi2ch-net-download-file url time
 					    (list "200" "304"
+						  (and location "301")
 						  (and location "302"))
 					    other-header)
 	    status (and proc
@@ -665,7 +668,8 @@ OTHER-HEADER は `navi2ch-net-download-file' に渡される。
 	       (setq header (navi2ch-net-add-state 'not-updated header))
 	       (message "%snot updated" (current-message))))
 	    ((and location
-		  (string= status "302")
+		  (or (string= status "301")
+		      (string= status "302"))
 		  (assq 'location header))
 	     (setq url (cdr (assq 'location header))
 		   redo t)
