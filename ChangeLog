@@ -1,3 +1,7 @@
+2020-09-26  MIZUNUMA Yuto  <mizmiz@sf.net>
+
+	* navi2ch-thumbnail.el (navi2ch-thumbnail-curl-p): サムネイル機能を大幅刷新したので、古い方の機能を使いたい人のためにnavi2ch-thumbnail.elを新旧切り替えのstabにし、navi2ch-thumbnail-old.elとnavi2ch-thumbnail-new.elを切り替える
+
 2020-09-12  MIZUNUMA Yuto  <mizmiz@sf.net>
 
 	* navi2ch-thumbnail-internal.el:
