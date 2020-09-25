@@ -256,7 +256,7 @@
           (setq w (nth 1 prop-list))
           (setq h (nth 2 prop-list)) 
           (setq s (nth 3 prop-list)))
-      (when (and (file-exists-p target-file) (navi2ch-thumbnail-imgur-json-p target-file))
+      (when (and (file-exists-p target-file) (navi2ch-thumbnail-imgur-404-p target-file))
 	(let ((imgur-json (json-read-file target-file)))
 	  (setq w (cdr (assoc 'width (cdr (assoc 'data imgur-json)))))
 	  (setq h (cdr (assoc 'height (cdr (assoc 'data imgur-json)))))
@@ -283,16 +283,17 @@
       (when (and w h s)
         (insert (format " (thumb %sx%s:%sk)" w h (round (/ (if (number-or-marker-p s)s (string-to-number s)) 1024))))))))
 
-(defun navi2ch-thumbnail-imgur-json-p (file)
-    (not (with-temp-buffer
+(defun navi2ch-thumbnail-imgur-404-p (file)
+    (with-temp-buffer
 	   (insert-file-contents file)
 	   (goto-char (point-min))
-	   (when (re-search-forward
+	   (if (re-search-forward
 		  "<title>imgur: the simple 404 page</title>"
 		  nil t)
-	     (message "%s 404 error file delete" file)
-	     (delete-file file)
-	     nil))))
+	       (progn 
+		 (message "%s 404 error file delete" file)
+		 (delete-file file))
+	     t)))
 
 (defun navi2ch-thumbnail-imgur-insert-thumbnail-curl (id ext)
   (navi2ch-thumbnail-process-count-up)
