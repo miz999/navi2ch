@@ -24,6 +24,8 @@
 ;; サムネイルを表示する場合、新機能を使うか以前のを使うか選択するstub
 ;; navi2ch-thumbnail-curl-p
 
+(provide 'navi2ch-thumbnail)
+
 (defvar navi2ch-thumbnail-curl-p t "サムネイルを表示する場合、新機能を使うか以前のを使うか選択する")
 
 (if navi2ch-thumbnail-curl-p

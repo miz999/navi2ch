@@ -72,7 +72,7 @@
 
 ;;; Code
 
-(provide 'navi2ch-thumbnail)
+(provide 'navi2ch-thumbnail-old)
 
 (defcustom navi2ch-thumbnail-p t
   "* サムネイル表示する"
