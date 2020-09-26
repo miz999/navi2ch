@@ -1,4 +1,59 @@
-;;; navi2ch-thumbnail-internal.el --- -*- coding: utf-8-unix; -*-
+;;; navi2ch-thumbnail-internal.el --- thumbnail view for navi2ch -*- coding: utf-8-unix; -*-
+;; Copyright (C) 2020 by Navi2ch Project
+
+;; Authors: MIZUNUMA Yuto <mizmiz@users.sourceforge.net>
+;; Keywords: network 2ch
+
+;; This file is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 2, or (at your option)
+;; any later version.
+
+;; This file is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with GNU Emacs; see the file COPYING.  If not, write to
+;; the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
+
+;;; Commentary:
+
+;; サムネイルを表示する機能です
+;; 画像表示に対応したemacsで動きます
+
+;; 画像リンクURL上で','を押すとサムネイル画像を挿入表示します。自動取得、
+;; 自動表示はしません。基本的にキーで駆動です。キャッシュを持っている画
+;; 像は自動表示されます。キャッシュの自動削除機能はありません。
+;;
+
+;;; Code
+
+(provide 'navi2ch-thumbnail)
+
+(defcustom navi2ch-thumbnail-p t
+  "* サムネイル表示する"
+  :type 'boolean
+  :group 'navi2ch)
+
+(defcustom navi2ch-thumbnail-thumbnail-directory
+  (expand-file-name "navi2ch-thumbnails/" navi2ch-directory)
+  "* 画像キャッシュディレクトリ"
+  :type 'string
+  :group 'navi2ch)
+
+(defcustom navi2ch-thumbnail-thumbsize-width 300
+  "* サムネイル表示サイズ横(等倍縮小でアスペクト比保持)"
+  :type 'integer
+  :group 'navi2ch)
+
+(defcustom navi2ch-thumbnail-thumbsize-height 150
+  "* サムネイル表示サイズ縦(等倍縮小でアスペクト比保持)"
+  :type 'integer
+  :group 'navi2ch)
+
 (define-key navi2ch-article-mode-map "." 'navi2ch-thumbnail-show-image-external-full);;普通のサイズの画像表示
 (define-key navi2ch-popup-article-mode-map "." 'navi2ch-thumbnail-show-image-external-full);;オリジナルサイズの画像表示
 
@@ -8,7 +63,7 @@
 (defvar navi2ch-browse-local-image-program nil "画像ビューアー")
 (defvar navi2ch-browse-local-image-args nil "画像ビューアーを呼ぶときの引数")
 
-(defvar navi2ch-thumbnail-script-dir (concat default-directory "/thumbnail-script/") "画像取得用スクリプトのあるディレクトリ")
+(defvar navi2ch-thumbnail-script-dir "~/navi2ch/navi2ch-dev/thumbnail-script/" "画像取得用スクリプトのあるディレクトリ")
 
 (cond
  ((equal system-type 'gnu/linux)
@@ -20,6 +75,22 @@
   (defvar curl_imgur_thumb.sh (concat navi2ch-thumbnail-script-dir "curl_imgur_thumb.bat"))
   (defvar curl_external.sh (concat navi2ch-thumbnail-script-dir "curl_external.bat"))
   (defvar appspot.sh (concat navi2ch-thumbnail-script-dir "appspot.bat"))))
+
+(defvar navi2ch-thumbnail-image-url-regex
+  "\\(h?t?tps?://[^ 　\t\n\r]+\\.\\(gif\\|jpe?g\\|png\\)\\)" "articleから画像らしきリンクを探すregexを1行にまとめる")
+
+(defun navi2ch-thumbnail-insert-image-reload ()
+  "スレが再描画される時にサムネも再描画"
+  (interactive)
+  (when navi2ch-thumbnail-p
+    (let (url)
+      (when (display-images-p)
+	(save-excursion
+	  (let ((buffer-read-only nil))
+	    (goto-char (point-min))
+	    (while (re-search-forward navi2ch-thumbnail-image-url-regex nil t)
+	      (setq url (match-string 1))
+	      (navi2ch-thumbnail-image-pre url nil))))))))
 
 (defvar navi2ch-thumbnail-point-list nil)
 (defvar navi2ch-thumbnail-bat-process nil)
@@ -107,7 +178,7 @@
       (save-excursion
         (let ((buffer-read-only nil))
           (move-beginning-of-line nil)
-          (insert-image (navi2ch-create-image thumb-name))
+          (insert-image (create-image thumb-name))
           (add-text-properties (1- (point)) (point)
                                (list 'link t 'link-head t
                                      'url url
@@ -149,8 +220,10 @@
 	  (with-current-buffer (set-buffer bufname)
 	    (let ((buffer-read-only nil))
 	      (goto-char (string-to-number pointnum))
-	      (unless (re-search-forward id nil t)
-		(message  "twitter-callback search error %s pointnum->%s point->%s" id pointnum (point)))
+	      ;; ;;最初のサーチでエラーが出るが謎(point忘れてる？)
+	      ;; (unless (re-search-forward id nil t)
+	      (re-search-forward id nil t)
+	      ;; 	(message  "twitter-callback search error %s pointnum->%s point->%s" id pointnum (point)))
 	      (navi2ch-thumbnail-insert-image nil nil nil link local-file)
 	      ;; (move-beginning-of-line nil)          
 	      ;; (insert-image (navi2ch-create-image local-file))
@@ -185,7 +258,7 @@
           (setq w (nth 1 prop-list))
           (setq h (nth 2 prop-list)) 
           (setq s (nth 3 prop-list)))
-      (when (and (file-exists-p target-file) (navi2ch-thumbnail-json-p target-file))
+      (when (and (file-exists-p target-file) (navi2ch-thumbnail-imgur-404-p target-file))
 	(let ((imgur-json (json-read-file target-file)))
 	  (setq w (cdr (assoc 'width (cdr (assoc 'data imgur-json)))))
 	  (setq h (cdr (assoc 'height (cdr (assoc 'data imgur-json)))))
@@ -204,7 +277,7 @@
   (save-excursion
     (let ((buffer-read-only nil))
       (move-beginning-of-line nil)
-      (insert-image (navi2ch-create-image thumb-fname))
+      (insert-image (create-image thumb-fname))
       (add-text-properties (1- (point)) (point)
                            (list 'link t 'link-head t 'url url
                                  'navi2ch-link-type 'image 'navi2ch-link (navi2ch-thumbnail-url-to-file url)
@@ -212,15 +285,17 @@
       (when (and w h s)
         (insert (format " (thumb %sx%s:%sk)" w h (round (/ (if (number-or-marker-p s)s (string-to-number s)) 1024))))))))
 
-(defun navi2ch-thumbnail-json-p (file)
-    (not (with-temp-buffer
+(defun navi2ch-thumbnail-imgur-404-p (file)
+    (with-temp-buffer
 	   (insert-file-contents file)
 	   (goto-char (point-min))
-	   (when (re-search-forward
+	   (if (re-search-forward
 		  "<title>imgur: the simple 404 page</title>"
 		  nil t)
-	     (message "%s 404 error file delete" file)
-	     (delete-file file)))))
+	       (progn 
+		 (message "%s 404 error file delete" file)
+		 (delete-file file))
+	     t)))
 
 (defun navi2ch-thumbnail-imgur-insert-thumbnail-curl (id ext)
   (navi2ch-thumbnail-process-count-up)
@@ -260,11 +335,10 @@
 		(when (and w h s)
 		  (navi2ch-thumbnail-image-prop-list-set link w h s)
 		  (goto-char (- (string-to-number pointnum) 1))
-;		  (unless (re-search-backward id nil t)
-;		    (message "imgur-callback point 1 %s->%s" pointnum (point))
-		    (unless (re-search-forward id nil t)
-		      (message  "imgur-callback search error %s pointnum->%s point->%s" id pointnum (point)))
-;		    )
+		  ;;   ;;最初のサーチでエラーが出るが謎(point忘れてる？)
+		  ;; (unless (re-search-forward id nil t)
+		  (re-search-forward id nil t)
+		  ;;     (message  "imgur-callback search error %s pointnum->%s point->%s" id pointnum (point)))
 ;		  (message "imgur-callback point 2 %s pointnum %s -> point %s" id pointnum (point))
 		  (navi2ch-thumbnail-insert-image w h s link local-file)
 ;;		  (move-beginning-of-line nil)
@@ -427,7 +501,7 @@
                         (message "x-image-deny: %s" (cdr (assq 'X-IMAGE-DENY header)))
                         (insert " (deny image)"))                       
                        (t
-                         (insert-image (navi2ch-create-image fname))
+                         (insert-image (create-image fname))
                         (add-text-properties
                          (1- (point)) (point)
                          (list 'link t 'link-head t
@@ -477,6 +551,24 @@
 (defun navi2ch-thumbnail-show-image-external-full ()
   (interactive)
   (navi2ch-thumbnail-show-image-external 'full))
+
+(defun navi2ch-thumbnail-select-current-link (&optional browse-p)
+  (interactive "P")
+  (let ((type (get-text-property (point) 'navi2ch-link-type))
+	(prop (get-text-property (point) 'navi2ch-link))
+	url)
+    (cond
+     ((eq type 'url)
+      (cond
+       ((and (not (navi2ch-thumbnail-image-shown-p))
+             (string-match navi2ch-thumbnail-image-url-regex prop))
+        (navi2ch-thumbnail-image-pre prop t))
+
+       ((and (file-name-extension prop)
+	     (member (downcase (file-name-extension prop))
+		     navi2ch-browse-url-image-extentions)))))
+     ((eq type 'image)
+      (navi2ch-thumbnail-show-image-external)))))
 
 (defun navi2ch-thumbnail-show-image-external (&optional mode)
   (let* ((type (car (get-text-property (point) 'display)))
@@ -575,7 +667,7 @@
 	    (save-excursion
 	      (let ((buffer-read-only nil))
 		(move-beginning-of-line nil)
-		(insert-image (navi2ch-create-image fname))
+		(insert-image (create-image fname))
 		(add-text-properties
 		 (1- (point)) (point)
 		 (list 'link t 'link-head t
@@ -607,7 +699,7 @@
 ;					  'imagemagick nil
 ;					  :width navi2ch-thumbnail-thumbsize-width
 ;					  :height navi2ch-thumbnail-thumbsize-height)
-	   (navi2ch-create-image thumb))
+	   (create-image thumb))
 	(add-text-properties
 	 (1- (point)) (point)
 	 (list 'link t 'link-head t
@@ -707,8 +799,9 @@
 		   (when (and w h s)
 		     (navi2ch-thumbnail-image-prop-list-set url w h s))))))))))
 
-(setq navi2ch-thmbnail-image-prop-list nil)
-(setq navi2ch-thmbnail-image-prop-list (navi2ch-load-info (concat navi2ch-thumbnail-thumbnail-directory "/image-prop.el")))
+(defvar navi2ch-thmbnail-image-prop-list nil "画像のプロパティを保存しておくリスト")
+(defvar navi2ch-thumbnail-image-prop-list-file-name (concat navi2ch-thumbnail-thumbnail-directory "image-prop.el")
+  "画像のプロパティを保存しておくファイル")
 
 (defun navi2ch-thumbnail-image-prop-list-set (url w h size)
   (if (navi2ch-thumbnail-image-prop-list-get url)
@@ -716,9 +809,13 @@
   (setq navi2ch-thmbnail-image-prop-list
         (cons (list url w h size) navi2ch-thmbnail-image-prop-list))))
 
+(add-hook 'navi2ch-hook 'navi2ch-thumbnail-load-image-prop)
+(defun navi2ch-thumbnail-load-image-prop ()
+  (setq navi2ch-thmbnail-image-prop-list (navi2ch-load-info navi2ch-thumbnail-image-prop-list-file-name)))
+
 (add-hook 'navi2ch-exit-hook 'navi2ch-thumbnail-save-image-prop)
 (defun navi2ch-thumbnail-save-image-prop ()
-  (navi2ch-save-info (concat navi2ch-thumbnail-thumbnail-directory "/image-prop.el") navi2ch-thmbnail-image-prop-list))
+  (navi2ch-save-info navi2ch-thumbnail-image-prop-list-file-name navi2ch-thmbnail-image-prop-list))
 
 (defun navi2ch-thumbnail-image-prop-list-get (url)
   (assoc url navi2ch-thmbnail-image-prop-list))
