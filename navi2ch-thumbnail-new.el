@@ -64,15 +64,16 @@
 (defvar navi2ch-browse-local-image-args nil "画像ビューアーを呼ぶときの引数")
 
 (defvar navi2ch-thumbnail-script-dir "~/navi2ch/navi2ch-dev/thumbnail-script/" "画像取得用スクリプトのあるディレクトリ")
+(defvar curl_imgur_thumb.script "curl_imgur_thumb.sh" "imgurの画像を取得するスクリプト")
 
 (cond
  ((equal system-type 'gnu/linux)
   (setq navi2ch-browse-local-image-program "eog")
-  (defvar curl_imgur_thumb.sh (concat navi2ch-thumbnail-script-dir "curl_imgur_thumb.sh"))
+  (setq curl_imgur_thumb.script "curl_imgur_thumb.sh")
   (defvar curl_external.sh (concat navi2ch-thumbnail-script-dir "curl_external.sh"))
   (defvar appspot.sh (concat navi2ch-thumbnail-script-dir "appspot.sh")))
  ((or (equal system-type 'windows-nt) (equal system-type 'cygwin))
-  (defvar curl_imgur_thumb.sh (concat navi2ch-thumbnail-script-dir "curl_imgur_thumb.bat"))
+  (setq curl_imgur_thumb.script "curl_imgur_thumb.bat")
   (defvar curl_external.sh (concat navi2ch-thumbnail-script-dir "curl_external.bat"))
   (defvar appspot.sh (concat navi2ch-thumbnail-script-dir "appspot.bat"))))
 
@@ -114,7 +115,7 @@
 (defun navi2ch-thumbnail-bat-process-pop ()
   (let ((poped (car navi2ch-thumbnail-point-list)))
     (setq navi2ch-thumbnail-point-list (cdr navi2ch-thumbnail-point-list))
-    (cond ((string= (nth 0 poped) curl_imgur_thumb.sh)
+    (cond ((string= (nth 0 poped) (concat navi2ch-thumbnail-script-dir curl_imgur_thumb.script))
 	   (setq navi2ch-thumbnail-bat-process
 		 (start-process (nth 2 poped)
 				"curl-get-image"  (nth 0 poped) (nth 3 poped)
@@ -308,7 +309,7 @@
 	(url-json (concat "https://api.imgur.com/3/image/" id ".json"))
 	(file-json (concat navi2ch-thumbnail-thumbnail-directory "i.imgur.com/" id ".json")))    
     (navi2ch-thumbnail-bat-process-push
-     (list curl_imgur_thumb.sh 'navi2ch-thumbnail-imgur-process-callback-thumb-curl
+     (list (concat navi2ch-thumbnail-script-dir curl_imgur_thumb.script) 'navi2ch-thumbnail-imgur-process-callback-thumb-curl
 	   (concat "curl-get-image_" id "_" (buffer-name) "_" (number-to-string (point)))
 	   url-thumb target-file url-json file-json))))
 
