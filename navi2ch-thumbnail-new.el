@@ -76,6 +76,15 @@
   (defvar curl_external.sh (concat navi2ch-thumbnail-script-dir "curl_external.bat"))
   (defvar appspot.sh (concat navi2ch-thumbnail-script-dir "appspot.bat"))))
 
+;;cygwinはパス名が面倒
+(when (equal system-type 'cygwin)
+    (require 'cygwin-mount)
+    (defun navi2ch-thumbnail-cygwin-to-win (path)
+      (if (eq system-type 'cygwin) (cygewin-convert-file-name-to-windows path) path))
+    
+    (defmacro navi2ch-thumbnail-cygwin-to-win-setq-macro (path)
+      (list 'setq path (list 'if '(eq system-type cygwin) '(cygwin-convert-file-name-to-windows path) path))))
+
 (defvar navi2ch-thumbnail-image-url-regex
   "\\(h?t?tps?://[^ 　\t\n\r]+\\.\\(gif\\|jpe?g\\|png\\)\\)" "articleから画像らしきリンクを探すregexを1行にまとめる")
 
@@ -183,13 +192,6 @@
                                (list 'link t 'link-head t
                                      'url url
                                      'navi2ch-link-type 'image 'navi2ch-link fname 'file-name thumb-name)))))))
-
-(require 'cygwin-mount)
-(defun navi2ch-thumbnail-cygwin-to-win (path)
-  (if (eq system-type 'cygwin) (cygewin-convert-file-name-to-windows path) path))
-  
-(defmacro navi2ch-thumbnail-cygwin-to-win-setq-macro (path)
-  (list 'setq path (list 'if '(eq system-type cygwin) '(cygwin-convert-file-name-to-windows path) path)))
 
 (defun navi2ch-thumbnail-twitter-insert (url buffer-point)
   (navi2ch-thumbnail-process-count-up)
