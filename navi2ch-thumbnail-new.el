@@ -253,7 +253,7 @@
 	 (filename-t (navi2ch-thumbnail-url-to-file url-t))
 	 (filename-full (navi2ch-thumbnail-url-to-file url-full))
 	 (target-file (concat navi2ch-thumbnail-thumbnail-directory "i.imgur.com/" id ".json"))
-	 w h s gifv link header fname)
+	 w h s gifv link header fname prop-list)
 
     (if (setq prop-list (navi2ch-thumbnail-image-prop-list-get url-full))
         (progn
@@ -366,7 +366,8 @@
          (json-file (navi2ch-thumbnail-url-to-file (concat "https://i.imgur.com/" id ".json" )))
          (fname original-fname)
 	 (navi2ch-net-http-proxy nil)
-	 (original-filesize (get-text-property (point) 'original-filesize)))
+	 (original-filesize (get-text-property (point) 'original-filesize))
+	 proc h-filesize)
     (cond 
      ((file-exists-p original-fname)
       (navi2ch-thumbnail-browse-local-image original-fname))
@@ -374,14 +375,9 @@
       (navi2ch-thumbnail-browse-local-image h-fname))
      (t
       (cond ((eq mode 'reduction)
-;	     (if (eq system-type 'windows-nt)
-;	       (setq h-filesize "0")
-		 (setq h-filesize (cdr (assq 'content-length (navi2ch-net-get-header (navi2ch-net-send-request (concat "https://i.imgur.com/" id "h.jpg") "HEAD")))))
-;	       )
-;	(when (file-exists-p json-file)
-;	  (setq original-filesize (cdr (assoc 'size (cdr (assoc 'data (json-read-file json-file)))))))
+	     (setq h-filesize (cdr (assq 'content-length (navi2ch-net-get-header (navi2ch-net-send-request (concat "https://i.imgur.com/" id "h.jpg") "HEAD")))))
 	     (cond
-	 ;;縮小画像の圧縮率が悪くメリットが薄い場合はオリジナルのファイルを取得
+	      ;;縮小画像の圧縮率が悪くメリットが薄い場合はオリジナルのファイルを取得
 	      ((and original-filesize (< original-filesize 80000))
 	       (setq fname original-fname))
 	      ((or (not  original-filesize)
@@ -390,16 +386,11 @@
 		    (< (/ (float (string-to-number h-filesize)) (float original-filesize)) 0.8)))
 	       (setq fname h-fname)
 	       (setq url (concat "https://i.imgur.com/" id "h.jpg")))
-	      (t (message "圧縮率が低いのでオリジナルサイズのファイル取得"))
-	      )))
-;    (message "imgur-external-open %s" url)
-;    (if (> navi2ch-thumbnail-process-count 10)
-;      (message "callback still remain")
-    
-	    (setq proc
-		  (start-process (concat "curl-get-image_" fname)
-				 "curl-get-image" curl_external.sh url fname))
-	    (set-process-filter proc 'navi2ch-thumbnail-imgur-process-callback-external)))))
+	      (t (message "圧縮率が低いのでオリジナルサイズのファイル取得")))))
+      (setq proc
+	    (start-process (concat "curl-get-image_" fname)
+			   "curl-get-image" curl_external.sh url fname))
+      (set-process-filter proc 'navi2ch-thumbnail-imgur-process-callback-external)))))
 
 (defun navi2ch-thumbnail-imgur-process-callback-external (proc result)
   (let ((pn (process-name proc))
@@ -576,9 +567,9 @@
 (defun navi2ch-thumbnail-show-image-external (&optional mode)
   (let* ((type (car (get-text-property (point) 'display)))
 	(prop (get-text-property (point) 'navi2ch-link))
-;	(original-filesize (get-text-property (point) 'original-filesize))
 	(url (get-text-property (point) 'url))
-        (fname (navi2ch-thumbnail-url-to-file url mode)))
+        (fname (navi2ch-thumbnail-url-to-file url mode))
+	proc)
     (if (not mode)
         (setq mode 'reduction))
     (cond
@@ -590,16 +581,11 @@
        (if (eq system-type 'windows-nt)
            (navi2ch-replace-string "/" "\\\\" prop t)
          (navi2ch-thumbnail-cygwin-to-win prop))))
-;         (if (eq system-type 'cygwin) (cygwin-convert-file-name-to-windows prop) prop))))
-     
      ((string-match (concat "https?://[mi]?\.?imgur\.com/\\(.+\\)\\(\." (regexp-opt navi2ch-browse-url-image-extentions t) "\\)") url)
 	(navi2ch-thumbnail-imgur-external-open (match-string 1 url) (match-string 2 url) url mode))
      
      ((and (eq mode 'reduction) (file-exists-p (setq fname (navi2ch-thumbnail-url-to-file url mode))))
-      (navi2ch-thumbnail-browse-local-image fname)
-;      (navi2ch-browse-url-image (if (eq system-type 'cygwin) (cygwin-convert-file-name-to-windows fname) fname))
-      )
-     
+      (navi2ch-thumbnail-browse-local-image fname))     
      (t
       (message "external call で開きます %s %s" url fname)
       (setq proc
@@ -607,27 +593,25 @@
             (setq proc
                   (start-process (concat "curl-get-image_" fname)
                           "curl-get-image" curl_external.sh url fname))
-;                          "curl-get-image" (expand-file-name curl_external.sh navi2ch-top-directory ) url (if (eq system-type 'cygwin) (cygwin-convert-file-name-to-windows fname) fname)))
           (setq proc
                 (start-process (concat "curl-get-image_" fname)
                                "curl-get-image" (expand-file-name curl_external.sh navi2ch-top-directory ) url fname))))
-;                               "curl-get-image" (expand-file-name curl_external.sh navi2ch-top-directory ) url (if (eq system-type 'cygwin) (cygwin-convert-file-name-to-windows fname) fname)))))
       (set-process-filter proc 'navi2ch-thumbnail-imgur-process-callback-external)))))
 
 (defun navi2ch-thumbnail-open-gif (prop)
   (cond
-     ((eq window-system 'ns)
-      (let ((new-window-flag (cond ((boundp 'browse-url-new-window-flag)
+   ((eq window-system 'ns)
+    (let ((new-window-flag (cond ((boundp 'browse-url-new-window-flag)
                                           browse-url-new-window-flag)
                                          ((boundp 'browse-url-new-window-p)
-                                          browse-url-new-window-p))))
-        (setq fname (concat "file://" prop))
-        (setq args (list "-a" "firefox" prop))
-        (start-process "animation gif" nil "open" "-a" "firefox" prop)))
-     ((and (string-match ".+imgur\.com/.+\.gif$" url))
-      (navi2ch-browse-url (concat url "v")))
-     (t
-      (navi2ch-browse-url url))))
+                                          browse-url-new-window-p)))
+	  (fname (concat "file://" prop))
+	  (args (list "-a" "firefox" prop)))
+      (start-process "animation gif" nil "open" "-a" "firefox" prop)))
+   ((and (string-match ".+imgur\.com/.+\.gif$" url))
+    (navi2ch-browse-url (concat url "v")))
+   (t
+    (navi2ch-browse-url url))))
       
 (defun navi2ch-thumbnail-image-pre (urlorg &optional force)
   "forceはスレ再描画ではnil"
