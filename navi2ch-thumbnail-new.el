@@ -67,6 +67,8 @@
 (defvar navi2ch-thumbnail-curl_imgur_thumb.script "curl_imgur_thumb.sh" "imgurの画像を取得するスクリプト")
 (defvar navi2ch-thumbnail-curl_external.script "curl_external.sh" "twitter等の画像を取得するスクリプト" )
 
+(defvar navi2ch-thumbnail-count-string nil "サムネイル関連でモードラインに表示してほしい文字列" )
+
 (cond
  ((equal system-type 'gnu/linux)
   (setq navi2ch-browse-local-image-program "eog")
