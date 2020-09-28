@@ -29,6 +29,6 @@
 (defvar navi2ch-thumbnail-curl-p t "サムネイルを表示する場合、新機能を使うか以前のを使うか選択する")
 
 (if navi2ch-thumbnail-curl-p
-    (require "navi2ch-thumbnail-new.el")
-  (require "navi2ch-thumbnail-old.el"))
+    (require 'navi2ch-thumbnail-new)
+  (require 'navi2ch-thumbnail-old))
 

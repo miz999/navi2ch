@@ -64,26 +64,31 @@
 (defvar navi2ch-browse-local-image-args nil "画像ビューアーを呼ぶときの引数")
 
 (defvar navi2ch-thumbnail-script-dir "~/navi2ch/navi2ch-dev/thumbnail-script/" "画像取得用スクリプトのあるディレクトリ")
+(defvar navi2ch-thumbnail-curl_imgur_thumb.script "curl_imgur_thumb.sh" "imgurの画像を取得するスクリプト")
+(defvar navi2ch-thumbnail-curl_external.script "curl_external.sh" "twitter等の画像を取得するスクリプト" )
+
+(defvar navi2ch-thumbnail-count-string nil "サムネイル関連でモードラインに表示してほしい文字列" )
 
 (cond
  ((equal system-type 'gnu/linux)
   (setq navi2ch-browse-local-image-program "eog")
-  (defvar curl_imgur_thumb.sh (concat navi2ch-thumbnail-script-dir "curl_imgur_thumb.sh"))
-  (defvar curl_external.sh (concat navi2ch-thumbnail-script-dir "curl_external.sh"))
+  (setq navi2ch-thumbnail-curl_imgur_thumb.script "curl_imgur_thumb.sh")
+  (setq navi2ch-thumbnail-curl_external.script "curl_external.sh")
   (defvar appspot.sh (concat navi2ch-thumbnail-script-dir "appspot.sh")))
  ((or (equal system-type 'windows-nt) (equal system-type 'cygwin))
-  (defvar curl_imgur_thumb.sh (concat navi2ch-thumbnail-script-dir "curl_imgur_thumb.bat"))
-  (defvar curl_external.sh (concat navi2ch-thumbnail-script-dir "curl_external.bat"))
+  (setq navi2ch-thumbnail-curl_imgur_thumb.script "curl_imgur_thumb.bat")
+  (setq navi2ch-thumbnail-curl_external.script "curl_external.bat")
   (defvar appspot.sh (concat navi2ch-thumbnail-script-dir "appspot.bat"))))
 
 ;;cygwinはパス名が面倒
 (when (equal system-type 'cygwin)
-    (require 'cygwin-mount)
-    (defun navi2ch-thumbnail-cygwin-to-win (path)
-      (if (eq system-type 'cygwin) (cygewin-convert-file-name-to-windows path) path))
+  (require 'cygwin-mount))
+
+(defun navi2ch-thumbnail-cygwin-to-win (path)
+  (if (eq system-type 'cygwin) (cygewin-convert-file-name-to-windows path) path))
     
-    (defmacro navi2ch-thumbnail-cygwin-to-win-setq-macro (path)
-      (list 'setq path (list 'if '(eq system-type cygwin) '(cygwin-convert-file-name-to-windows path) path))))
+(defmacro navi2ch-thumbnail-cygwin-to-win-setq-macro (path)
+  (list 'setq path (list 'if '(eq system-type cygwin) '(cygwin-convert-file-name-to-windows path) path)))
 
 (defvar navi2ch-thumbnail-image-url-regex
   "\\(h?t?tps?://[^ 　\t\n\r]+\\.\\(gif\\|jpe?g\\|png\\)\\)" "articleから画像らしきリンクを探すregexを1行にまとめる")
@@ -112,17 +117,23 @@
 
 (defun navi2ch-thumbnail-bat-process-pop ()
   (let ((poped (car navi2ch-thumbnail-point-list)))
-    (setq navi2ch-thumbnail-point-list (cdr navi2ch-thumbnail-point-list))
-    (cond ((string= (nth 0 poped) curl_imgur_thumb.sh)
-	   (setq navi2ch-thumbnail-bat-process
-		 (start-process (nth 2 poped)
-				"curl-get-image"  (nth 0 poped) (nth 3 poped)
-;			      "curl-get-image" (expand-file-name "curl_imgur_thumb.bat"  navi2ch-top-directory ) (nth 3 poped)
-;			      "curl-get-image" (expand-file-name (nth 0 poped)  navi2ch-top-directory ) (nth 3 poped)
-				(nth 4 poped) (nth 5 poped) (nth 6 poped)))
-	   (set-process-filter navi2ch-thumbnail-bat-process (nth 1 poped)))
-	  ((string= (nth 0 poped) curl_external.sh)
-	   (message "bat-process pop twitter %s" poped)))))
+    (when poped
+      (setq navi2ch-thumbnail-point-list (cdr navi2ch-thumbnail-point-list))
+      (cond ((string= (nth 0 poped) navi2ch-thumbnail-curl_imgur_thumb.script)
+	     (setq navi2ch-thumbnail-bat-process
+		   (start-process (nth 2 poped)
+				  "curl-get-image" (concat navi2ch-thumbnail-script-dir (nth 0 poped)) (nth 3 poped)
+				  (nth 4 poped) (nth 5 poped) (nth 6 poped)))
+	     (set-process-filter navi2ch-thumbnail-bat-process (nth 1 poped)))
+	    ((string= (nth 0 poped) navi2ch-thumbnail-curl_external.script)
+	     (message "bat-process pop twitter %s" poped)
+	     (setq navi2ch-thumbnail-bat-process
+		   (start-process (nth 2 poped)
+				  "curl-get-image" (concat navi2ch-thumbnail-script-dir (nth 0 poped)) (nth 3 poped)
+				  (nth 4 poped)))
+	     (set-process-filter navi2ch-thumbnail-bat-process (nth 1 poped)))
+	    (t
+	     (message "謎process pop %s" poped))))))
 
 (defvar navi2ch-thumbnail-process-count 0)
 (defvar navi2ch-thumbnail-process-list nil)
@@ -183,17 +194,21 @@
 	(thumb-name (expand-file-name (concat (navi2ch-thumbnail-url-to-file noexturl) "." size-flag "." ext)))
         w h s header)
     (if (not (file-exists-p thumb-name))
-	(navi2ch-thumbnail-twitter-insert url (point))
+	(navi2ch-thumbnail-twitter-process-push url)
+;	(navi2ch-thumbnail-twitter-insert url (point))
       (save-excursion
         (let ((buffer-read-only nil))
-          (move-beginning-of-line nil)
-          (insert-image (create-image thumb-name))
-          (add-text-properties (1- (point)) (point)
-                               (list 'link t 'link-head t
-                                     'url url
-                                     'navi2ch-link-type 'image 'navi2ch-link fname 'file-name thumb-name)))))))
+	  (navi2ch-thumbnail-insert-image nil nil nil url thumb-name)
+          ;; (move-beginning-of-line nil)
+          ;; (insert-image (create-image thumb-name))
+          ;; (add-text-properties (1- (point)) (point)
+          ;;                      (list 'link t 'link-head t
+          ;;                            'url url
+          ;;                            'navi2ch-link-type 'image 'navi2ch-link fname 'file-name thumb-name))
+	  )))))
 
-(defun navi2ch-thumbnail-twitter-insert (url buffer-point)
+(defun navi2ch-thumbnail-twitter-insert (url)
+  "twitterのAPI(？)風のURLを使ってサムネイルを取得する。url末尾に:thumbをつけるとサムネ"
   (navi2ch-thumbnail-process-count-up)
   (message "twitter-insert:%s => %s" url (navi2ch-thumbnail-url-to-file url))
   (string-match "\\(https?://pbs.twimg.com/media/.+\\)\\..+$" url)
@@ -202,9 +217,22 @@
 	   (url-thumb (concat url ":thumb"))
 	   (proc 
 	    (start-process (concat "curl-get-image_" url-thumb "_" (buffer-name) "_" (number-to-string (point)))
-			   "curl-get-image" curl_external.sh
+			   "curl-get-image" navi2ch-thumbnail-curl_external.script
 			   url-thumb (navi2ch-thumbnail-cygwin-to-win local-file))))
       (set-process-filter proc 'navi2ch-thumbnail-twitter-process-callback))))
+
+(defun navi2ch-thumbnail-twitter-process-push (url)
+  "twitterのAPI(？)風のURLを使ってサムネイルを取得する。url末尾に:thumbをつけるとサムネ。スタックに積む"
+  (navi2ch-thumbnail-process-count-up)
+  (message "twitter-process-push:%s => %s" url (navi2ch-thumbnail-url-to-file url))
+  (string-match "\\(https?://pbs.twimg.com/media/.+\\)\\..+$" url)
+  (when (match-string 1 url)
+    (let* ((local-file (navi2ch-thumbnail-url-to-file (concat (match-string 1 url) ".thumb.jpg")))
+	   (url-thumb (concat url ":thumb")))
+      (navi2ch-thumbnail-bat-process-push
+       (list navi2ch-thumbnail-curl_external.script 'navi2ch-thumbnail-twitter-process-callback
+	   (concat "curl-get-image_" url-thumb "_" (buffer-name) "_" (number-to-string (point)))
+	   url-thumb local-file)))))
 
 (defun navi2ch-thumbnail-twitter-process-callback (proc result)
   (navi2ch-thumbnail-process-count-down)
@@ -216,27 +244,17 @@
 	  (bufname (match-string 4 pn))
 	  (pointnum (match-string 5 pn))
 	  (local-file (concat navi2ch-thumbnail-thumbnail-directory "pbs.twimg.com/media/" id ".thumb.jpg")))
-      (message "callback-twitter-id:%s -> %s" id (replace-regexp-in-string  "\n+$" "" result))
+;;      (message "callback-twitter-id:%s -> %s" id (replace-regexp-in-string  "\n+$" "" result))
       (when (file-exists-p local-file)
 	(save-excursion
 	  (with-current-buffer (set-buffer bufname)
 	    (let ((buffer-read-only nil))
 	      (goto-char (string-to-number pointnum))
 	      ;; ;;最初のサーチでエラーが出るが謎(point忘れてる？)
-	      ;; (unless (re-search-forward id nil t)
 	      (re-search-forward id nil t)
+	      ;; (unless (re-search-forward id nil t)
 	      ;; 	(message  "twitter-callback search error %s pointnum->%s point->%s" id pointnum (point)))
-	      (navi2ch-thumbnail-insert-image nil nil nil link local-file)
-	      ;; (move-beginning-of-line nil)          
-	      ;; (insert-image (navi2ch-create-image local-file))
-	      ;; (add-text-properties
-	      ;;  (1- (point)) (point)
-	      ;;  (list 'link t 'link-head t
-	      ;; 	     'url link
-	      ;; 	     'navi2ch-link-type 'image
-	      ;; 	     'navi2ch-link (navi2ch-thumbnail-url-to-file link)
-	      ;; 	     'file-name local-file))
-	      )))))))
+	      (navi2ch-thumbnail-insert-image nil nil nil link local-file))))))))
 
 ;Authorization: ebe3ee4157ab24a 8c5a1f6cd438be7b21d6cdf8cdba2f917bb97513
 ;https://api.imgur.com/3/image/{id}
@@ -252,7 +270,7 @@
 	 (filename-t (navi2ch-thumbnail-url-to-file url-t))
 	 (filename-full (navi2ch-thumbnail-url-to-file url-full))
 	 (target-file (concat navi2ch-thumbnail-thumbnail-directory "i.imgur.com/" id ".json"))
-	 w h s gifv link header fname)
+	 w h s gifv link header fname prop-list)
 
     (if (setq prop-list (navi2ch-thumbnail-image-prop-list-get url-full))
         (progn
@@ -307,7 +325,7 @@
 	(url-json (concat "https://api.imgur.com/3/image/" id ".json"))
 	(file-json (concat navi2ch-thumbnail-thumbnail-directory "i.imgur.com/" id ".json")))    
     (navi2ch-thumbnail-bat-process-push
-     (list curl_imgur_thumb.sh 'navi2ch-thumbnail-imgur-process-callback-thumb-curl
+     (list navi2ch-thumbnail-curl_imgur_thumb.script 'navi2ch-thumbnail-imgur-process-callback-thumb-curl
 	   (concat "curl-get-image_" id "_" (buffer-name) "_" (number-to-string (point)))
 	   url-thumb target-file url-json file-json))))
 
@@ -365,7 +383,8 @@
          (json-file (navi2ch-thumbnail-url-to-file (concat "https://i.imgur.com/" id ".json" )))
          (fname original-fname)
 	 (navi2ch-net-http-proxy nil)
-	 (original-filesize (get-text-property (point) 'original-filesize)))
+	 (original-filesize (get-text-property (point) 'original-filesize))
+	 h-filesize)
     (cond 
      ((file-exists-p original-fname)
       (navi2ch-thumbnail-browse-local-image original-fname))
@@ -373,14 +392,9 @@
       (navi2ch-thumbnail-browse-local-image h-fname))
      (t
       (cond ((eq mode 'reduction)
-;	     (if (eq system-type 'windows-nt)
-;	       (setq h-filesize "0")
-		 (setq h-filesize (cdr (assq 'content-length (navi2ch-net-get-header (navi2ch-net-send-request (concat "https://i.imgur.com/" id "h.jpg") "HEAD")))))
-;	       )
-;	(when (file-exists-p json-file)
-;	  (setq original-filesize (cdr (assoc 'size (cdr (assoc 'data (json-read-file json-file)))))))
+	     (setq h-filesize (cdr (assq 'content-length (navi2ch-net-get-header (navi2ch-net-send-request (concat "https://i.imgur.com/" id "h.jpg") "HEAD")))))
 	     (cond
-	 ;;縮小画像の圧縮率が悪くメリットが薄い場合はオリジナルのファイルを取得
+	      ;;縮小画像の圧縮率が悪くメリットが薄い場合はオリジナルのファイルを取得
 	      ((and original-filesize (< original-filesize 80000))
 	       (setq fname original-fname))
 	      ((or (not  original-filesize)
@@ -389,16 +403,10 @@
 		    (< (/ (float (string-to-number h-filesize)) (float original-filesize)) 0.8)))
 	       (setq fname h-fname)
 	       (setq url (concat "https://i.imgur.com/" id "h.jpg")))
-	      (t (message "圧縮率が低いのでオリジナルサイズのファイル取得"))
-	      )))
-;    (message "imgur-external-open %s" url)
-;    (if (> navi2ch-thumbnail-process-count 10)
-;      (message "callback still remain")
-    
-	    (setq proc
-		  (start-process (concat "curl-get-image_" fname)
-				 "curl-get-image" curl_external.sh url fname))
-	    (set-process-filter proc 'navi2ch-thumbnail-imgur-process-callback-external)))))
+	      (t (message "圧縮率が低いのでオリジナルサイズのファイル取得")))))
+      (set-process-filter (start-process (concat "curl-get-image_" fname)
+					 "curl-get-image" (concat navi2ch-thumbnail-script-dir navi2ch-thumbnail-curl_external.script) url fname)
+			  'navi2ch-thumbnail-imgur-process-callback-external)))))
 
 (defun navi2ch-thumbnail-imgur-process-callback-external (proc result)
   (let ((pn (process-name proc))
@@ -575,12 +583,13 @@
 (defun navi2ch-thumbnail-show-image-external (&optional mode)
   (let* ((type (car (get-text-property (point) 'display)))
 	(prop (get-text-property (point) 'navi2ch-link))
-;	(original-filesize (get-text-property (point) 'original-filesize))
 	(url (get-text-property (point) 'url))
-        (fname (navi2ch-thumbnail-url-to-file url mode)))
+        (fname (navi2ch-thumbnail-url-to-file url mode))
+	proc)
     (if (not mode)
         (setq mode 'reduction))
     (cond
+     ;;ANIME GIFやmp4動画はダウンロードしないでブラウザで直接見る
      ((or (string-match ".+\.gif$" prop) (string-match ".+\.mp4$" prop))
       (navi2ch-thumbnail-open-gif prop))
      
@@ -589,44 +598,38 @@
        (if (eq system-type 'windows-nt)
            (navi2ch-replace-string "/" "\\\\" prop t)
          (navi2ch-thumbnail-cygwin-to-win prop))))
-;         (if (eq system-type 'cygwin) (cygwin-convert-file-name-to-windows prop) prop))))
-     
      ((string-match (concat "https?://[mi]?\.?imgur\.com/\\(.+\\)\\(\." (regexp-opt navi2ch-browse-url-image-extentions t) "\\)") url)
-	(navi2ch-thumbnail-imgur-external-open (match-string 1 url) (match-string 2 url) url mode))
-     
+	(navi2ch-thumbnail-imgur-external-open (match-string 1 url) (match-string 2 url) url mode))     
      ((and (eq mode 'reduction) (file-exists-p (setq fname (navi2ch-thumbnail-url-to-file url mode))))
-      (navi2ch-thumbnail-browse-local-image fname)
-;      (navi2ch-browse-url-image (if (eq system-type 'cygwin) (cygwin-convert-file-name-to-windows fname) fname))
-      )
-     
+      (navi2ch-thumbnail-browse-local-image fname))     
      (t
       (message "external call で開きます %s %s" url fname)
       (setq proc
-        (if (eq mode 'reduction)
-            (setq proc
-                  (start-process (concat "curl-get-image_" fname)
-                          "curl-get-image" curl_external.sh url fname))
-;                          "curl-get-image" (expand-file-name curl_external.sh navi2ch-top-directory ) url (if (eq system-type 'cygwin) (cygwin-convert-file-name-to-windows fname) fname)))
-          (setq proc
-                (start-process (concat "curl-get-image_" fname)
-                               "curl-get-image" (expand-file-name curl_external.sh navi2ch-top-directory ) url fname))))
-;                               "curl-get-image" (expand-file-name curl_external.sh navi2ch-top-directory ) url (if (eq system-type 'cygwin) (cygwin-convert-file-name-to-windows fname) fname)))))
+	    (start-process (concat "curl-get-image_" fname)
+			   "curl-get-image" (concat navi2ch-thumbnail-script-dir navi2ch-thumbnail-curl_external.script) url fname))
+        ;; (if (eq mode 'reduction)
+        ;;     (setq proc
+        ;;           (start-process (concat "curl-get-image_" fname)
+        ;;                   "curl-get-image" navi2ch-thumbnail-curl_external.script url fname))
+        ;;   (setq proc
+        ;;         (start-process (concat "curl-get-image_" fname)
+        ;;                        "curl-get-image" (expand-file-name curl_external.sh navi2ch-top-directory ) url fname))))
       (set-process-filter proc 'navi2ch-thumbnail-imgur-process-callback-external)))))
 
 (defun navi2ch-thumbnail-open-gif (prop)
   (cond
-     ((eq window-system 'ns)
-      (let ((new-window-flag (cond ((boundp 'browse-url-new-window-flag)
+   ((eq window-system 'ns)
+    (let ((new-window-flag (cond ((boundp 'browse-url-new-window-flag)
                                           browse-url-new-window-flag)
                                          ((boundp 'browse-url-new-window-p)
-                                          browse-url-new-window-p))))
-        (setq fname (concat "file://" prop))
-        (setq args (list "-a" "firefox" prop))
-        (start-process "animation gif" nil "open" "-a" "firefox" prop)))
-     ((and (string-match ".+imgur\.com/.+\.gif$" url))
-      (navi2ch-browse-url (concat url "v")))
-     (t
-      (navi2ch-browse-url url))))
+                                          browse-url-new-window-p)))
+	  (fname (concat "file://" prop))
+	  (args (list "-a" "firefox" prop)))
+      (start-process "animation gif" nil "open" "-a" "firefox" prop)))
+   ((and (string-match ".+imgur\.com/.+\.gif$" url))
+    (navi2ch-browse-url (concat url "v")))
+   (t
+    (navi2ch-browse-url url))))
       
 (defun navi2ch-thumbnail-image-pre (urlorg &optional force)
   "forceはスレ再描画ではnil"
