@@ -126,7 +126,6 @@
 				  (nth 4 poped) (nth 5 poped) (nth 6 poped)))
 	     (set-process-filter navi2ch-thumbnail-bat-process (nth 1 poped)))
 	    ((string= (nth 0 poped) navi2ch-thumbnail-curl_external.script)
-	     (message "bat-process pop twitter %s" poped)
 	     (setq navi2ch-thumbnail-bat-process
 		   (start-process (nth 2 poped)
 				  "curl-get-image" (concat navi2ch-thumbnail-script-dir (nth 0 poped)) (nth 3 poped)
@@ -254,7 +253,9 @@
 	      (re-search-forward id nil t)
 	      ;; (unless (re-search-forward id nil t)
 	      ;; 	(message  "twitter-callback search error %s pointnum->%s point->%s" id pointnum (point)))
-	      (navi2ch-thumbnail-insert-image nil nil nil link local-file))))))))
+	      (navi2ch-thumbnail-insert-image nil nil nil link local-file))))))
+    (when (listp navi2ch-thumbnail-point-list)
+      (navi2ch-thumbnail-bat-process-pop))))
 
 ;Authorization: ebe3ee4157ab24a 8c5a1f6cd438be7b21d6cdf8cdba2f917bb97513
 ;https://api.imgur.com/3/image/{id}
