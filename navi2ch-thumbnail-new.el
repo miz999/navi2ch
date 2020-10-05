@@ -721,8 +721,8 @@
 				(if (nth 2 image-attr) " GIF ANIME" ""))))
 	  (let (proc width height size header)
 	    (cond
-	     ((setq prop-list (navi2ch-thumbnail-image-prop-list-get url))
-	      (setq width (nth 1 prop-list)) 
+	     ((setq prop-list (or (navi2ch-thumbnail-image-prop-list-get url) (navi2ch-thumbnail-header-file-read (concat file ".header"))))
+	      (setq width (nth 1 prop-list))
 	      (setq height (nth 2 prop-list)) 
 	      (setq size (nth 3 prop-list)))
 	     ((and navi2ch-thumbnail-use-image-server (image-type-from-file-header thumb)
@@ -748,7 +748,7 @@
 
 (defun navi2ch-thumbnail-appspot-insert-thumbnail (url)
   (navi2ch-thumbnail-process-count-up)
-  (let* ((thumb-file (navi2ch-thumbnail-url-to-file (concat url ".jpg")))
+  (let* ((file (navi2ch-thumbnail-url-to-file url))
 	 (w (number-to-string navi2ch-thumbnail-thumbsize-width))
 	 (h (number-to-string navi2ch-thumbnail-thumbsize-height))
 	 (url-appspot (concat "http://thumbmake.appspot.com/main?url=" url "&w=" w "&h=" h))
@@ -760,7 +760,7 @@
           (start-process (concat "curl-get-image|" url "|" (buffer-name) "|" (number-to-string (point)))
                          "curl-get-image" appspot.sh "http://thumbmake.appspot.com/main"
 ;                         "curl-get-image" (expand-file-name appspot.sh navi2ch-top-directory) "http://thumbmake.appspot.com/main"
-			 url w h (navi2ch-thumbnail-cygwin-to-win thumb-file)))
+			 url w h (navi2ch-thumbnail-cygwin-to-win file)))
 ;			 url w h (if (eq system-type 'cygwin) (cygwin-convert-file-name-to-windows thumb-file) thumb-file)))
     (set-process-filter proc 'navi2ch-thumbnail-appspot-process-callback)))
 
@@ -783,17 +783,22 @@
 	   (delete-file local-file))
 	  (t 
 	   (message "appspot callback:%s" (replace-regexp-in-string  "\n+$" "" result))
-	   (with-temp-buffer
-	     (insert-file-contents (concat local-file ".header"))
-	     (goto-char (point-min))
-	     (while (re-search-forward "X-IMAGE-WIDTH: \\([0-9]+\\)" nil t)
-	       (setq w (match-string 1)))
-	     (goto-char (point-min))
-	     (while (re-search-forward "X-IMAGE-HEIGHT: \\([0-9]+\\)" nil t)
-	       (setq h (match-string 1)))
-	     (goto-char (point-min))
-	     (while (re-search-forward "X-IMAGE-SIZE: \\([0-9]+\\)" nil t)
-	       (setq s (match-string 1))))
+	   (when (setq prop-list (navi2ch-thumbnail-header-file-read (concat (navi2ch-thumbnail-url-to-file url) ".header")))
+;	     (setq link (nth 0 prop-list))
+	     (setq w (nth 0 prop-list))
+	     (setq h (nth 1 prop-list)) 
+	     (setq s (nth 2 prop-list)))
+	   ;; (with-temp-buffer
+	   ;;   (insert-file-contents (concat local-file ".header"))
+	   ;;   (goto-char (point-min))
+	   ;;   (while (re-search-forward "X-IMAGE-WIDTH: \\([0-9]+\\)" nil t)
+	   ;;     (setq w (match-string 1)))
+	   ;;   (goto-char (point-min))
+	   ;;   (while (re-search-forward "X-IMAGE-HEIGHT: \\([0-9]+\\)" nil t)
+	   ;;     (setq h (match-string 1)))
+	   ;;   (goto-char (point-min))
+	   ;;   (while (re-search-forward "X-IMAGE-SIZE: \\([0-9]+\\)" nil t)
+	   ;;     (setq s (match-string 1))))
      
 	   (when (file-exists-p local-file)
 	     (save-excursion
@@ -804,6 +809,21 @@
 		   (navi2ch-thumbnail-insert-image w h s url local-file)
 		   (when (and w h s)
 		     (navi2ch-thumbnail-image-prop-list-set url w h s))))))))))
+
+(defun navi2ch-thumbnail-header-file-read (header-file)
+  (with-temp-buffer
+    (let (w h s)
+      (insert-file-contents header-file)
+      (goto-char (point-min))
+      (while (re-search-forward "X-IMAGE-WIDTH: \\([0-9]+\\)" nil t)
+	(setq w (match-string 1)))
+      (goto-char (point-min))
+      (while (re-search-forward "X-IMAGE-HEIGHT: \\([0-9]+\\)" nil t)
+	(setq h (match-string 1)))
+      (goto-char (point-min))
+      (while (re-search-forward "X-IMAGE-SIZE: \\([0-9]+\\)" nil t)
+	(setq s (match-string 1)))
+      (list w h s))))
 
 (defvar navi2ch-thmbnail-image-prop-list nil "画像のプロパティを保存しておくリスト")
 (defvar navi2ch-thumbnail-image-prop-list-file-name (concat navi2ch-thumbnail-thumbnail-directory "image-prop.el")
