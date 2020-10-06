@@ -771,8 +771,8 @@
 	 (url (match-string 1 pn))
 	 (bufname (match-string 2 pn))
 	 (pointnum (match-string 3 pn))
-	 (replaced-id (nth 1 (split-string url ":")))
-	 (replaced-id (replace-regexp-in-string "-" "\-" replaced-id))
+	 (replaced-id (replace-regexp-in-string "-" "\-" (nth 1 (split-string url ":"))))
+;	 (replaced-id (replace-regexp-in-string "-" "\-" replaced-id))
 	 (result (replace-regexp-in-string  "\n+$" "" result))
 	 (local-file (concat (navi2ch-thumbnail-url-to-file url) ".jpg"))
 	 w h s)
@@ -826,8 +826,8 @@
       (list w h s))))
 
 (defvar navi2ch-thmbnail-image-prop-list nil "画像のプロパティを保存しておくリスト")
-(defvar navi2ch-thumbnail-image-prop-list-file-name (concat navi2ch-thumbnail-thumbnail-directory "image-prop.el")
-  "画像のプロパティを保存しておくファイル")
+;; (defvar navi2ch-thumbnail-image-prop-list-file-name (concat navi2ch-thumbnail-thumbnail-directory "image-prop.el")
+;;   "画像のプロパティを保存しておくファイル")
 
 (defun navi2ch-thumbnail-image-prop-list-set (url w h size)
   (if (navi2ch-thumbnail-image-prop-list-get url)
@@ -835,13 +835,13 @@
   (setq navi2ch-thmbnail-image-prop-list
         (cons (list url w h size) navi2ch-thmbnail-image-prop-list))))
 
-(add-hook 'navi2ch-hook 'navi2ch-thumbnail-load-image-prop)
-(defun navi2ch-thumbnail-load-image-prop ()
-  (setq navi2ch-thmbnail-image-prop-list (navi2ch-load-info navi2ch-thumbnail-image-prop-list-file-name)))
+;; (add-hook 'navi2ch-hook 'navi2ch-thumbnail-load-image-prop)
+;; (defun navi2ch-thumbnail-load-image-prop ()
+;;   (setq navi2ch-thmbnail-image-prop-list (navi2ch-load-info navi2ch-thumbnail-image-prop-list-file-name)))
 
-(add-hook 'navi2ch-exit-hook 'navi2ch-thumbnail-save-image-prop)
-(defun navi2ch-thumbnail-save-image-prop ()
-  (navi2ch-save-info navi2ch-thumbnail-image-prop-list-file-name navi2ch-thmbnail-image-prop-list))
+;; (add-hook 'navi2ch-exit-hook 'navi2ch-thumbnail-save-image-prop)
+;; (defun navi2ch-thumbnail-save-image-prop ()
+;;   (navi2ch-save-info navi2ch-thumbnail-image-prop-list-file-name navi2ch-thmbnail-image-prop-list))
 
 (defun navi2ch-thumbnail-image-prop-list-get (url)
   (assoc url navi2ch-thmbnail-image-prop-list))
