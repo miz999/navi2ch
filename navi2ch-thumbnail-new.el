@@ -398,6 +398,7 @@
 	       (setq fname h-fname)
 	       (setq url (concat "https://i.imgur.com/" id "h.jpg")))
 	      (t (message "圧縮率が低いのでオリジナルサイズのファイル取得")))))
+;      (navi2ch-thumbnail-external-open-thread url fname)
       (set-process-filter (start-process (concat "curl-get-image_" fname)
 					 "curl-get-image" (concat navi2ch-thumbnail-script-dir navi2ch-thumbnail-curl_external.script) url fname)
 			  'navi2ch-thumbnail-external-open-callback)))))
@@ -411,14 +412,20 @@
       (string-match "curl-get-image_\\([^<]+\\)" pn)
       (navi2ch-thumbnail-browse-local-image (match-string 1 pn)))))
 
-(defun navi2ch-thumbnail-get-from-imgserver2 (url &optional thumb referer force)
-  (let (proc header)
-    (make-thread `(lambda ()
-		    (let (args))))
-    (setq proc (navi2ch-net-update-file url thumb nil nil nil nil nil))
-    (when proc
-      (setq header (navi2ch-net-get-header proc)))
-  ))
+(defun navi2ch-thumbnail-external-open-thread (url fname &optional referer force)
+  (let (
+	(thread (make-thread `(lambda (url fname)
+		    (message "thread call %s" fname)
+		    (setq proc (navi2ch-net-update-file url fname nil nil nil nil nil))
+		    (message "%s %s" fname proc)
+		    (when proc
+		      (message "header %s" (navi2ch-net-get-header proc)))) url fname))
+	proc header thread)
+    (message "thread name %s" thread)))
+;; (all-threads)
+;; (thread-join (current-thread))
+;; (thread-last-error)
+;; (thread-yield)
 
 (defun navi2ch-thumbnail-get-from-imgserver (url &optional thumb referer force)
   (when (< navi2ch-thumbnail-process-count 15)
