@@ -101,11 +101,12 @@
     (let (url)
       (when (display-images-p)
 	(save-excursion
-	  (let ((buffer-read-only nil))
+;	  (let ((buffer-read-only nil))
 	    (goto-char (point-min))
 	    (while (re-search-forward navi2ch-thumbnail-image-url-regex nil t)
 	      (setq url (match-string 1))
-	      (navi2ch-thumbnail-image-pre url nil))))))))
+	      (navi2ch-thumbnail-image-pre url nil)))))))
+;  )
 
 (defvar navi2ch-thumbnail-point-list nil)
 (defvar navi2ch-thumbnail-bat-process nil)
@@ -704,7 +705,9 @@
         (error "unable to get remote image server: %s" url))
       (when (and (not (file-exists-p thumb)) (file-exists-p file))
         (setq thumb file)))
-    (let ((buffer-read-only nil)
+      (save-excursion
+    (let (
+;	  (buffer-read-only nil)
 	  w h s	proc header)
       (when (file-exists-p thumb)
 	(move-beginning-of-line nil)
@@ -751,13 +754,13 @@
 	    (if (and w h s)
 		(insert (format " (thumb %sx%s:%sk)" w h (round (/ (string-to-number s) 1024)))))))
           
+;    (save-excursion
       (when (re-search-forward
 	   (concat "h?ttps?://\\([^ \t\n\r]+\\."
 		   (regexp-opt navi2ch-browse-url-image-extentions t)
 		   "\\)") nil t)
-	  (save-excursion
-	      (add-text-properties (match-beginning 0)(match-end 0) '(navi2ch-image-shown "shown")))
-	  (move-end-of-line nil))))
+	(add-text-properties (match-beginning 0)(match-end 0) '(navi2ch-image-shown "shown")))
+      (move-end-of-line nil))))
 
 (defun navi2ch-thumbnail-appspot-insert-thumbnail (url)
   (navi2ch-thumbnail-process-count-up)
@@ -780,12 +783,13 @@
 	 (pointnum (string-to-number (match-string 3 pn)))
 	 (replaced-id (replace-regexp-in-string "-" "\-" (nth 1 (split-string url ":"))))
 	 (result (replace-regexp-in-string  "\n+$" "" result))
-	 (local-file (concat (navi2ch-thumbnail-url-to-file url) ".jpg"))
+	 (thumb (concat (navi2ch-thumbnail-url-to-file url) ".jpg"))
 	 w h s)
     (cond ((string-match "^zero.+" result)
 	   (message "appspot callback abort:%s" result))
-	  ((and (file-exists-p local-file) (= (nth 7 (file-attributes local-file)) 0))
-	   (message "file empty: %s" local-file))
+	  ((and (file-exists-p thumb) (= (nth 7 (file-attributes thumb)) 0))
+	   (message "file empty: %s" thumb)
+	   (delete-file thumb))
 	  (t 
 	   (message "appspot callback:%s" (replace-regexp-in-string  "\n+$" "" result))
 	   (when (setq prop-list (navi2ch-thumbnail-header-file-read (concat (navi2ch-thumbnail-url-to-file url) ".header")))
@@ -793,7 +797,7 @@
 	     (setq h (nth 1 prop-list)) 
 	     (setq s (nth 2 prop-list)))
 	   ;; (with-temp-buffer
-	   ;;   (insert-file-contents (concat local-file ".header"))
+	   ;;   (insert-file-contents (concat thumb ".header"))
 	   ;;   (goto-char (point-min))
 	   ;;   (while (re-search-forward "X-IMAGE-WIDTH: \\([0-9]+\\)" nil t)
 	   ;;     (setq w (match-string 1)))
@@ -804,7 +808,7 @@
 	   ;;   (while (re-search-forward "X-IMAGE-SIZE: \\([0-9]+\\)" nil t)
 	   ;;     (setq s (match-string 1))))
      
-	   (when (file-exists-p local-file)
+	   (when (file-exists-p thumb)
 	     (save-excursion
 	       (with-current-buffer (set-buffer bufname)
 		 (when (and w h s)
@@ -813,7 +817,7 @@
 ;		   (goto-char pointnum)
 		   (goto-char 1)
 		   (re-search-forward replaced-id)
-		   (navi2ch-thumbnail-insert-image w h s url local-file)
+		   (navi2ch-thumbnail-insert-image w h s url thumb)
 		   )))))))
 					;)
 
