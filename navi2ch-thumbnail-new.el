@@ -113,10 +113,16 @@
 (defvar navi2ch-thumbnail-bat-process nil)
 
 (defun navi2ch-thumbnail-bat-process-push (l)
+;  (message "pl=%s" (length navi2ch-thumbnail-point-list))
+  (if (and (> (length navi2ch-thumbnail-point-list) 0)
+;    (message "l=%s pl=%s" (cdr (assq 'file (navi2ch-net-split-url (nth 3 l)))) (mapcar (lambda (url) (cdr (assq 'file (navi2ch-net-split-url (nth 3 url))))) navi2ch-thumbnail-point-list))
+    (member (cdr (assq 'file (navi2ch-net-split-url (nth 3 l)))) (mapcar (lambda (url) (cdr (assq 'file (navi2ch-net-split-url (nth 3 url))))) navi2ch-thumbnail-point-list)))
+      (message "push already in %s" l)
+  (navi2ch-thumbnail-process-count-up)
   (add-to-list 'navi2ch-thumbnail-point-list l t)
   (when (or (not navi2ch-thumbnail-bat-process)
 	    (and navi2ch-thumbnail-bat-process (not (eq (process-status navi2ch-thumbnail-bat-process) 'run))))
-      (navi2ch-thumbnail-bat-process-pop)))
+      (navi2ch-thumbnail-bat-process-pop))))
 
 (defun navi2ch-thumbnail-bat-process-pop ()
   (let ((poped (car navi2ch-thumbnail-point-list)))
@@ -212,7 +218,7 @@
 
 (defun navi2ch-thumbnail-twitter-process-push (url)
   "twitterのAPI(？)風のURLを使ってサムネイルを取得する。url末尾に:thumbをつけるとサムネ。スタックに積む"
-  (navi2ch-thumbnail-process-count-up)
+;  (navi2ch-thumbnail-process-count-up)
   (message "twitter-process-push:%s" url)
 ;;  (string-match "\\(https?://pbs.twimg.com/.+\\)\\..+$" url)
   (string-match (concat "\\(https?://pbs\.twimg\.com/\\(?:media\\|ext_tw_video_thumb\\)/[^:#]+\\)\."
@@ -226,6 +232,7 @@
 
 (defun navi2ch-thumbnail-twitter-process-callback (proc result)
   (navi2ch-thumbnail-process-count-down)
+  (message "twitter callback:%s" (replace-regexp-in-string  "\n+$" "" result))
   (let ((pn (process-name proc)))
     (string-match "curl-get-image_\\(https?://pbs.twimg.com/\\(?:media\\|ext_tw_video_thumb\\)/\\)\\([^.]+\\)\.\\([^:]+\\):thumb_\\(.+\\)_\\(.+\\)$" pn)
 ;;    (string-match "curl-get-image_\\(https?://pbs.twimg.com/media/\\([^.]+\\)\.\\([^:]+\\)\\):thumb_\\(.+\\)_\\(.+\\)$" pn)
@@ -234,7 +241,7 @@
 	   (ext (match-string 3 pn))
 	   (bufname (match-string 4 pn))
 	   (pointnum (match-string 5 pn))
-	   (local-file (navi2ch-thumbnail-url-to-file (concat link id ".thumb.jpg")))
+	   (local-file (navi2ch-thumbnail-url-to-file (concat link id ".thumb." ext)))
 	   (url (concat link id "." ext)))
       (when (file-exists-p local-file)
 	(with-current-buffer (set-buffer bufname)
@@ -318,7 +325,6 @@
     t)))
 
 (defun navi2ch-thumbnail-imgur-insert-thumbnail-curl (id ext)
-  (navi2ch-thumbnail-process-count-up)
   (let ((url (concat "https://i.imgur.com/" id "." ext))
 	(url-thumb (concat "https://i.imgur.com/" id "t.jpg"))
 	(target-file (concat navi2ch-thumbnail-thumbnail-directory "i.imgur.com/" id "t.jpg"))
