@@ -350,16 +350,74 @@ START が non-nil ならばレス番号 START からの差分を取得する。
 返り値は HEADER。"
   (let ((file (navi2ch-article-get-file-name board article))
 	(time (cdr (assq 'time article)))
-	(navi2ch-net-http-proxy navi2ch-net-http-proxy-5ch-article-update)
+;	(navi2ch-net-http-proxy navi2ch-net-http-proxy-5ch-article-update)
 	url header kako-p)
     (setq url (navi2ch-article-get-url board article))
+    (setq header (navi2ch-2ch-article-callback board article start))
+    
     ;;article変換proxyにはhttpのみで接続可
-    (setq url (navi2ch-replace-string "^https:" "http:" url))
-    (setq header (if start
-		     (navi2ch-net-update-file-diff url file time)
-		   (navi2ch-net-update-file url file time)))
-    (setq kako-p (navi2ch-net-get-state 'error header))
+    ;; (setq url (navi2ch-replace-string "^https:" "http:" url))
+    ;; (setq header (if start
+    ;; 		     (navi2ch-net-update-file-diff url file time)
+    ;; 		   (navi2ch-net-update-file url file time)))
+    ;; (setq kako-p (navi2ch-net-get-state 'error header))
     header))
+
+(setq navi2ch-2ch-article-parse-regexp
+"<span class=\"number\">\\([0-9]+\\)</span><span class=\"name\"><b>\\(.*?\\)</b></span><span class=\"date\">\\(.*?\\)</span><span class=\"uid\">\\(.*?\\)</span></div><div class=\"message\"><span class=\"escaped\">\\(.*?\\)</span></div></div>")
+
+(defun navi2ch-2ch-article-parse ()
+  (let ((case-fold-search t))
+    (re-search-forward navi2ch-2ch-article-parse-regexp nil t)))
+
+;(navi2ch-multibbs-defcallback navi2ch-js-article-callback
+(defun navi2ch-2ch-article-callback (board article &optional start)
+  (let ((file (navi2ch-article-get-file-name board article))
+	(lines "")
+	(not-updated t)
+	header)
+    (with-temp-buffer
+      (let ((beg (point))
+	    num name mail date contents subject id title proc)
+	(setq proc (navi2ch-net-download-file (navi2ch-article-to-url board article start)))
+	(setq header (navi2ch-net-get-header proc))
+	(insert (navi2ch-net-get-content proc))
+	(goto-char (point-min))
+	(when (re-search-forward "<title>\\(.+\\)\n</title>" nil t)
+	  (setq subject (match-string 1)))
+	(when (re-search-forward "<div class=\"stoplight stopred stopdone\">.+</div>"
+				 nil t)
+	  (message "このスレッドは過去ログ倉庫に格納")
+	  (goto-char (point-min))
+	  (setq header (navi2ch-net-add-state 'kako header)))
+	 
+	(while (navi2ch-2ch-article-parse)
+	   (setq num	(match-string 1)
+		 name	(match-string 2)
+		 date	(match-string 3)
+		 id	(match-string 4)
+		 contents (match-string 5))
+	   (delete-region beg (match-end 0))
+	   (if (not (string-match "<a href=\"mailto:\\(.+\\)\">\\(.+\\)</a>" name))
+	       (setq mail "")
+	     (setq mail (match-string 1 name))
+	     (setq name (match-string 2 name)))
+	   (unless (and (equal num "1") start)
+	     (setq lines (format "%s%s<>%s<>%s%s<>%s<>\n"
+				 lines name mail date (if (= 0 (length id)) "" (concat " ID:" id))
+				 contents (if (equal num "1") subject "")))
+	     (setq not-updated nil)
+	     (setq beg (point))))))
+    (if not-updated
+	(setq header (navi2ch-net-add-state 'not-updated header))
+      (with-temp-file file
+	(navi2ch-set-buffer-multibyte nil)
+	(when start
+	  (insert-file-contents file))
+	(goto-char (point-max))
+	(insert lines))
+      header)))
+;     (error . "X-Navi2ch-Error")))          ; エラー(ファイルが取得できないとか)
 
 (defun navi2ch-2ch-url-to-board (url)
   (let (host id)
@@ -426,20 +484,18 @@ START が non-nil ならばレス番号 START からの差分を取得する。
 			 (cons "submit" "書き込む")
 			 (cons "FROM"   (or from ""))
 			 (cons "mail"   (or mail ""))
+			 (cons "feature"    "top_livejupiter")
 			 (cons "bbs"    bbs)
 			 (cons "time"   time)
 			 (cons "MESSAGE" message)
+;			 (cons "oekaki_thread1" "")
 			 (if subject
 			     (cons "subject" subject)
 			   (cons "key"    key))))
 	   (coding-system (navi2ch-board-get-coding-system board))
 	   (cookies (navi2ch-net-match-cookies url)))
-      ;;書き込みはhttpsオンリー
-;      (setq url (navi2ch-replace-string "^http:" "https:" url))
-      ;;proxyは使わない。呼び出し側でnavi2ch-net-http-proxyがletバインド
-;      (setq navi2ch-net-http-proxy nil)
       ;;5ch書き込みにはREADJSというcookieが必要だが、これはjavascriptをパースしないと取得できないので強制付加
-      (setq cookies (append cookies '(("READJS" "off"))))
+;      (setq cookies (append cookies '(("READJS" "off"))))
       (dolist (param post)
 	(unless (assoc (car param) param-alist)
 	  (push param param-alist)))
