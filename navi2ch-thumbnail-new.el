@@ -31,7 +31,7 @@
 
 ;;; Code
 
-(provide 'navi2ch-thumbnail-new)
+(require 'json)
 
 (defcustom navi2ch-thumbnail-p t
   "* サムネイル表示する"
@@ -57,8 +57,8 @@
 (define-key navi2ch-article-mode-map "." 'navi2ch-thumbnail-show-image-external-full);;普通のサイズの画像表示
 (define-key navi2ch-popup-article-mode-map "." 'navi2ch-thumbnail-show-image-external-full);;オリジナルサイズの画像表示
 
-(defvar navi2ch-thumbnail-reduction-width 1200 "画像ビューアーでいい感じの大きさを表示するときの横")
-(defvar navi2ch-thumbnail-reduction-height 800 "画像ビューアーでいい感じの大きさを表示するときの縦")
+;(defvar navi2ch-thumbnail-reduction-width 1200 "画像ビューアーでいい感じの大きさを表示するときの横")
+;(defvar navi2ch-thumbnail-reduction-height 800 "画像ビューアーでいい感じの大きさを表示するときの縦")
 
 (defvar navi2ch-browse-local-image-program nil "画像ビューアー")
 (defvar navi2ch-browse-local-image-args nil "画像ビューアーを呼ぶときの引数")
@@ -66,6 +66,7 @@
 (defvar navi2ch-thumbnail-script-dir "~/navi2ch/navi2ch-dev/thumbnail-script/" "画像取得用スクリプトのあるディレクトリ")
 (defvar navi2ch-thumbnail-curl_imgur_thumb.script "curl_imgur_thumb.sh" "imgurの画像を取得するスクリプト")
 (defvar navi2ch-thumbnail-curl_external.script "curl_external.sh" "twitter等の画像を取得するスクリプト" )
+(defvar navi2ch-thumbnail-appspot-script "appspot.sh" "画像縮小サーバ経由で画像を取得するスクリプト" )
 
 (defvar navi2ch-thumbnail-count-string nil "サムネイル関連でモードラインに表示してほしい文字列" )
 
@@ -74,11 +75,11 @@
   (setq navi2ch-browse-local-image-program "eog")
   (setq navi2ch-thumbnail-curl_imgur_thumb.script "curl_imgur_thumb.sh")
   (setq navi2ch-thumbnail-curl_external.script "curl_external.sh")
-  (defvar appspot.sh (concat navi2ch-thumbnail-script-dir "appspot.sh")))
+  (setq navi2ch-thumbnail-appspot-script "appspot.sh"))
  ((or (equal system-type 'windows-nt) (equal system-type 'cygwin))
   (setq navi2ch-thumbnail-curl_imgur_thumb.script "curl_imgur_thumb.bat")
   (setq navi2ch-thumbnail-curl_external.script "curl_external.bat")
-  (defvar appspot.sh (concat navi2ch-thumbnail-script-dir "appspot.bat"))))
+  (setq navi2ch-thumbnail-appspot-script "appspot.bat")))
 
 ;;cygwinはパス名が面倒
 (when (equal system-type 'cygwin)
@@ -95,25 +96,33 @@
 
 (defun navi2ch-thumbnail-insert-image-reload ()
   "スレが再描画される時にサムネも再描画"
-  (interactive)
+;  (interactive)
+  (message "image-reload")
   (when navi2ch-thumbnail-p
     (let (url)
       (when (display-images-p)
 	(save-excursion
-	  (let ((buffer-read-only nil))
+;	  (let ((buffer-read-only nil))
 	    (goto-char (point-min))
 	    (while (re-search-forward navi2ch-thumbnail-image-url-regex nil t)
 	      (setq url (match-string 1))
-	      (navi2ch-thumbnail-image-pre url nil))))))))
+	      (navi2ch-thumbnail-image-pre url nil)))))))
+;  )
 
 (defvar navi2ch-thumbnail-point-list nil)
 (defvar navi2ch-thumbnail-bat-process nil)
 
 (defun navi2ch-thumbnail-bat-process-push (l)
+;  (message "pl=%s" (length navi2ch-thumbnail-point-list))
+  (if (and (> (length navi2ch-thumbnail-point-list) 0)
+;    (message "l=%s pl=%s" (cdr (assq 'file (navi2ch-net-split-url (nth 3 l)))) (mapcar (lambda (url) (cdr (assq 'file (navi2ch-net-split-url (nth 3 url))))) navi2ch-thumbnail-point-list))
+    (member (cdr (assq 'file (navi2ch-net-split-url (nth 3 l)))) (mapcar (lambda (url) (cdr (assq 'file (navi2ch-net-split-url (nth 3 url))))) navi2ch-thumbnail-point-list)))
+      (message "push already in %s" l)
+  (navi2ch-thumbnail-process-count-up)
   (add-to-list 'navi2ch-thumbnail-point-list l t)
   (when (or (not navi2ch-thumbnail-bat-process)
 	    (and navi2ch-thumbnail-bat-process (not (eq (process-status navi2ch-thumbnail-bat-process) 'run))))
-      (navi2ch-thumbnail-bat-process-pop)))
+      (navi2ch-thumbnail-bat-process-pop))))
 
 (defun navi2ch-thumbnail-bat-process-pop ()
   (let ((poped (car navi2ch-thumbnail-point-list)))
@@ -135,7 +144,7 @@
 	     (message "謎process pop %s" poped))))))
 
 (defvar navi2ch-thumbnail-process-count 0)
-(defvar navi2ch-thumbnail-process-list nil)
+;(defvar navi2ch-thumbnail-process-list nil)
 
 (defun navi2ch-thumbnail-process-count-up ()
     (navi2ch-thumbnail-process-count-updown 1))
@@ -187,17 +196,11 @@
              (copy-file prop-filename filename overwrite)))))
 
 (defun navi2ch-thumbnail-twitter (noexturl ext)
-  (let* ((url (concat noexturl "." ext))
-	 (size-flag "thumb")
-;	 (fname (expand-file-name (navi2ch-thumbnail-url-to-file url)))
-	 (thumb-name (expand-file-name (concat (navi2ch-thumbnail-url-to-file noexturl) "." size-flag "." ext))))
+  (let ((url (concat noexturl "." ext))
+	(thumb-name (expand-file-name (concat (navi2ch-thumbnail-url-to-file noexturl) ".thumb." ext))))
     (if (not (file-exists-p thumb-name))
 	(navi2ch-thumbnail-twitter-process-push url)
-;      (save-excursion
-;        (let ((buffer-read-only nil))
-	  (navi2ch-thumbnail-insert-image nil nil nil url thumb-name)
-	  )))
-;))
+      (navi2ch-thumbnail-insert-image nil nil nil url thumb-name))))
 
 ;; (defun navi2ch-thumbnail-twitter-insert (url)
 ;;   "twitterのAPI(？)風のURLを使ってサムネイルを取得する。url末尾に:thumbをつけるとサムネ"
@@ -215,38 +218,41 @@
 
 (defun navi2ch-thumbnail-twitter-process-push (url)
   "twitterのAPI(？)風のURLを使ってサムネイルを取得する。url末尾に:thumbをつけるとサムネ。スタックに積む"
-  (navi2ch-thumbnail-process-count-up)
-  (message "twitter-process-push:%s => %s" url (navi2ch-thumbnail-url-to-file url))
-  (string-match "\\(https?://pbs.twimg.com/media/.+\\)\\..+$" url)
-  (when (match-string 1 url)
-    (let* ((local-file (navi2ch-thumbnail-url-to-file (concat (match-string 1 url) ".thumb.jpg")))
+;  (navi2ch-thumbnail-process-count-up)
+  (message "twitter-process-push:%s" url)
+;;  (string-match "\\(https?://pbs.twimg.com/.+\\)\\..+$" url)
+  (string-match (concat "\\(https?://pbs\.twimg\.com/\\(?:media\\|ext_tw_video_thumb\\)/[^:#]+\\)\."
+			(regexp-opt navi2ch-browse-url-image-extentions t) ":?\\(.*\\)$") url)
+    (let* ((thumb (navi2ch-thumbnail-url-to-file (concat (match-string 1 url) ".thumb." (match-string 2 url))))
 	   (url-thumb (concat url ":thumb")))
       (navi2ch-thumbnail-bat-process-push
        (list navi2ch-thumbnail-curl_external.script 'navi2ch-thumbnail-twitter-process-callback
 	   (concat "curl-get-image_" url-thumb "_" (buffer-name) "_" (number-to-string (point)))
-	   url-thumb local-file)))))
+	   url-thumb thumb))))
 
 (defun navi2ch-thumbnail-twitter-process-callback (proc result)
   (navi2ch-thumbnail-process-count-down)
+  (message "twitter callback:%s" (replace-regexp-in-string  "\n+$" "" result))
   (let ((pn (process-name proc)))
-    (string-match "curl-get-image_\\(https?://pbs.twimg.com/media/\\([^.]+\\)\.\\([^:]+\\)\\):thumb_\\(.+\\)_\\(.+\\)$" pn)
+    (string-match "curl-get-image_\\(https?://pbs.twimg.com/\\(?:media\\|ext_tw_video_thumb\\)/\\)\\([^.]+\\)\.\\([^:]+\\):thumb_\\(.+\\)_\\(.+\\)$" pn)
+;;    (string-match "curl-get-image_\\(https?://pbs.twimg.com/media/\\([^.]+\\)\.\\([^:]+\\)\\):thumb_\\(.+\\)_\\(.+\\)$" pn)
     (let* ((link (match-string 1 pn))
-	  (id (match-string 2 pn))
-	  (ext (match-string 3 pn))
-	  (bufname (match-string 4 pn))
-	  (pointnum (match-string 5 pn))
-	  (local-file (concat navi2ch-thumbnail-thumbnail-directory "pbs.twimg.com/media/" id ".thumb.jpg")))
-;;      (message "callback-twitter-id:%s -> %s" id (replace-regexp-in-string  "\n+$" "" result))
+	   (id (match-string 2 pn))
+	   (ext (match-string 3 pn))
+	   (bufname (match-string 4 pn))
+	   (pointnum (match-string 5 pn))
+	   (local-file (navi2ch-thumbnail-url-to-file (concat link id ".thumb." ext)))
+	   (url (concat link id "." ext)))
       (when (file-exists-p local-file)
-	(save-excursion
-	  (with-current-buffer (set-buffer bufname)
+	(with-current-buffer (set-buffer bufname)
+	  (save-excursion
 	    (let ((buffer-read-only nil))
 	      (goto-char (string-to-number pointnum))
 	      ;; ;;最初のサーチでエラーが出るが謎(point忘れてる？)
 	      (re-search-forward id nil t)
 	      ;; (unless (re-search-forward id nil t)
 	      ;; 	(message  "twitter-callback search error %s pointnum->%s point->%s" id pointnum (point)))
-	      (navi2ch-thumbnail-insert-image nil nil nil link local-file))))))
+	      (navi2ch-thumbnail-insert-image nil nil nil url local-file))))))
     (when (listp navi2ch-thumbnail-point-list)
       (navi2ch-thumbnail-bat-process-pop))))
 
@@ -272,7 +278,7 @@
           (setq w (nth 1 prop-list))
           (setq h (nth 2 prop-list)) 
           (setq s (nth 3 prop-list)))
-      (when (and (file-exists-p target-file) (navi2ch-thumbnail-imgur-404-p target-file))
+      (when (and (file-exists-p target-file) (navi2ch-thumbnail-valid-file-p target-file))
 	(let ((imgur-json (json-read-file target-file)))
 	  (setq w (cdr (assoc 'width (cdr (assoc 'data imgur-json)))))
 	  (setq h (cdr (assoc 'height (cdr (assoc 'data imgur-json)))))
@@ -297,22 +303,28 @@
                                  'navi2ch-link-type 'image 'navi2ch-link (navi2ch-thumbnail-url-to-file url)
 				 'original-filesize s 'file-name thumb-fname))
       (when (and w h s)
-        (insert (format " (thumb %sx%s:%sk)" w h (round (/ (if (number-or-marker-p s)s (string-to-number s)) 1024))))))))
+        (insert (format " (thumb %sx%s:%sk)" w h (round (/ (if (number-or-marker-p s)s (string-to-number s)) 1024)))))
+      (navi2ch-thumbnail-set-url-shown))))
 
-(defun navi2ch-thumbnail-imgur-404-p (file)
-    (with-temp-buffer
-	   (insert-file-contents file)
-	   (goto-char (point-min))
-	   (if (re-search-forward
-		  "<title>imgur: the simple 404 page</title>"
-		  nil t)
-	       (progn 
-		 (message "%s 404 error file delete" file)
-		 (delete-file file))
-	     t)))
+(defun navi2ch-thumbnail-valid-file-p (file)
+  (cond
+   ((not (file-exists-p file))
+    (message "file not exist %s" file) nil)
+   ((= (nth 7 (file-attributes file)) 0)
+    (message "file size zero -> delete file %s" file)
+    (delete-file file) nil)
+   ((with-temp-buffer
+      (insert-file-contents file)
+      (goto-char (point-min))
+      (re-search-forward
+       "<title>imgur: the simple 404 page</title>"
+       nil t))
+    (message "%s 404 error file delete" file)
+    (delete-file file) nil)
+   (t
+    t)))
 
 (defun navi2ch-thumbnail-imgur-insert-thumbnail-curl (id ext)
-  (navi2ch-thumbnail-process-count-up)
   (let ((url (concat "https://i.imgur.com/" id "." ext))
 	(url-thumb (concat "https://i.imgur.com/" id "t.jpg"))
 	(target-file (concat navi2ch-thumbnail-thumbnail-directory "i.imgur.com/" id "t.jpg"))
@@ -332,9 +344,8 @@
 	   (bufname (match-string 2 pn))
 	   (pointnum (match-string 3 pn))
 	   (json-file (concat navi2ch-thumbnail-thumbnail-directory "i.imgur.com/" id ".json"))
-;    (setq target-file (if (eq system-type 'cygwin) (cygwin-convert-file-name-from-windows target-file) target-file))
-	   (local-file (concat navi2ch-thumbnail-thumbnail-directory "i.imgur.com/" id "t.jpg")))
-      (when (and (file-exists-p json-file) (file-exists-p local-file))
+	   (thumb (concat navi2ch-thumbnail-thumbnail-directory "i.imgur.com/" id "t.jpg")))
+      (when (and (file-exists-p json-file) (file-exists-p thumb))
 	(let* ((imgur-json (cdr (assoc 'data (json-read-file json-file))))
 	       (w (cdr (assoc 'width imgur-json)))
 	       (h (cdr (assoc 'height imgur-json)))
@@ -343,9 +354,8 @@
 	       (link (cdr (assoc 'link imgur-json))))
 	(if (not (get-buffer bufname))
 	    (message "imgur buffer is dead:%s" bufname)
-	  (save-excursion
 	    (with-current-buffer (set-buffer bufname)
-	      (let ((buffer-read-only nil))
+	  (save-excursion
 		(when (and w h s)
 		  (navi2ch-thumbnail-image-prop-list-set link w h s)
 		  (goto-char (- (string-to-number pointnum) 1))
@@ -353,23 +363,21 @@
 		  ;; (unless (re-search-forward id nil t)
 		  (re-search-forward id nil t)
 		  ;;     (message  "imgur-callback search error %s pointnum->%s point->%s" id pointnum (point)))
-;		  (message "imgur-callback point 2 %s pointnum %s -> point %s" id pointnum (point))
-		  (navi2ch-thumbnail-insert-image w h s link local-file)
+		  (navi2ch-thumbnail-insert-image w h s link thumb)
 ;;		  (move-beginning-of-line nil)
-;; 		  (insert-image (navi2ch-create-image local-file))
+;; 		  (insert-image (navi2ch-create-image thumb))
 ;; 		  (add-text-properties
 ;; 		   (1- (point)) (point)
 ;; 		   (list 'link t 'link-head t
 ;; 			 'url link
-;; ;			 'help-echo local-file
+;; ;			 'help-echo thumb
 ;; 			 'original-filesize s
 ;; 			 'navi2ch-link-type 'image
 ;; 			 'navi2ch-link (navi2ch-thumbnail-url-to-file link)
-;; 			 'file-name local-file))
+;; 			 'file-name thumb))
 ;; 		  (insert (format " (thumb %sx%s:%sk%s)" w h (round (/ s 1024)) (if gifv " AnimeGIF" "")))
-		  ))))))))
-      (when (listp navi2ch-thumbnail-point-list)
-	(navi2ch-thumbnail-bat-process-pop))))
+		  )))))))
+	(navi2ch-thumbnail-bat-process-pop)))
 
 (defun navi2ch-thumbnail-imgur-external-open (id ext url mode)
   (let* ((original-fname (navi2ch-thumbnail-url-to-file (concat "https://i.imgur.com/" id ext)))
@@ -408,7 +416,7 @@
 	(result (replace-regexp-in-string  "\n+$" "" result)))
     (if (string-match "^zero " result)
         (message "ファイル取得できません:%s" result)
-      (message "外部ビューアーで開きます:%s" result)
+;      (message "外部ビューアーで開きます:%s" result)
       (string-match "curl-get-image_\\([^<]+\\)" pn)
       (navi2ch-thumbnail-browse-local-image (match-string 1 pn)))))
 
@@ -636,18 +644,21 @@
       
 (defun navi2ch-thumbnail-image-pre (urlorg &optional force)
   "forceはスレ再描画ではnil"
-  (let ((url (substring-no-properties urlorg)))
-    (when navi2ch-thumbnail-p 
-      (when (string-match "h?t?\\(tps?://.+\\)$" url)
+  (when navi2ch-thumbnail-p
+    (if (get-text-property (point) 'navi2ch-image-shown)
+      (message "image already shown" urlorg)
+      (let ((url (substring-no-properties urlorg)))
+	(when (string-match "h?t?\\(tps?://.+\\)$" url)
 	(setq url (concat "ht" (match-string 1 url))))
-
       (cond
        ;;imgurは公式サーバからサムネイルが取得できる
        ((string-match (concat "https?:/+[mi]?\.?imgur\.com/\\([^./]+\\)\." (regexp-opt navi2ch-browse-url-image-extentions t)) url)
+;	 (string-match "https?:/+imgur\.com/a/\\([^./]+\\)" url))
 	(navi2ch-thumbnail-imgur-insert-thumbnail (match-string 1 url) (match-string 2 url)))
 
-       ;;twitterは公式サーバからサムネイルが取得できる
-       ((string-match (concat "\\(https?://pbs\.twimg\.com/media/[^:#]+\\)\."
+       ;;twitterは公式サーバからサムネイルが取得できる       
+;;       ((string-match (concat "\\(https?://pbs\.twimg\.com/media/[^:#]+\\)\."
+       ((string-match (concat "\\(https?://pbs\.twimg\.com/\\(?:media\\|ext_tw_video_thumb\\)/[^:#]+\\)\."
 			      (regexp-opt navi2ch-browse-url-image-extentions t) ":?\\(.*\\)$") url)
 	(navi2ch-thumbnail-twitter (match-string 1 url) (match-string 2 url)))
 
@@ -684,12 +695,11 @@
      
        ((and (not (string-match "https?://.+/.+\.gif$" url))
 	     (string-match "https?://.+/.+\..+$" url))
-	(navi2ch-thumbnail-insert-image-cache url))))))
+	(navi2ch-thumbnail-insert-image-cache url)))))))
 
 (defun navi2ch-thumbnail-insert-image-cache (url)
   (let* ((file  (navi2ch-thumbnail-url-to-file url))
 	 (thumb (concat file ".jpg")))
-
     (when (and (not (file-exists-p thumb)) (file-exists-p file))
       (setq thumb file))
     (when (and navi2ch-thumbnail-use-image-server (not (file-exists-p thumb)))
@@ -698,7 +708,10 @@
         (error "unable to get remote image server: %s" url))
       (when (and (not (file-exists-p thumb)) (file-exists-p file))
         (setq thumb file)))
-    (let ((buffer-read-only nil))
+      (save-excursion
+    (let (
+;	  (buffer-read-only nil)
+	  w h s	proc header)
       (when (file-exists-p thumb)
 	(move-beginning-of-line nil)
 	(insert-image
@@ -714,57 +727,63 @@
 	       'url url 'help-echo file
 	       'navi2ch-link-type 'image 'navi2ch-link file 'file-name file))
 	;; get image attribute 
-        (if (file-exists-p file)
-              (let (image-attr (navi2ch-thumbnail-image-identify file))
-		(insert (format " (%sx%s:%sk%s)"
-				(nth 0 image-attr)
-				(nth 1 image-attr)
-				(round (/ (nth 7 (file-attributes file)) 1024))
-				(if (nth 2 image-attr) " GIF ANIME" ""))))
-	  (let (proc width height size header)
 	    (cond
-	     ((setq prop-list (or (navi2ch-thumbnail-image-prop-list-get url) (navi2ch-thumbnail-header-file-read (concat file ".header"))))
-	      (setq width (nth 1 prop-list))
-	      (setq height (nth 2 prop-list)) 
-	      (setq size (nth 3 prop-list)))
+	     ((setq prop-list (or (cdr (navi2ch-thumbnail-image-prop-list-get url))
+				  (navi2ch-thumbnail-header-file-read (concat file ".header"))))
+	      (setq w (nth 0 prop-list))
+	      (setq h (nth 1 prop-list)) 
+	      (setq s (nth 2 prop-list)))
+	     ((file-exists-p file)
+	      (let (image-attr (navi2ch-thumbnail-image-identify file))
+		(setq w (nth 0 image-attr))
+		(setq h (nth 1 image-attr))
+		(setq s (round (/ (nth 7 (file-attributes file)) 1024)))))
 	     ((and navi2ch-thumbnail-use-image-server (image-type-from-file-header thumb)
 		   (setq proc (navi2ch-net-send-request (concat navi2ch-thumbnail-imgserver-name "?info&url=" url) "GET" )))
 	      (message "image property list not hit retrieve imgserver:%s" url)
 	      (setq header (navi2ch-net-get-header proc))
-	      (setq width (cdr (assq 'x-image-width header)))
-	      (setq height (cdr (assq 'x-image-height header)))
-	      (setq size (cdr (assq 'x-image-size header)))
-	      (if (and width height size)
-		  (navi2ch-thumbnail-image-prop-list-set url width height size)))
+	      (setq w (cdr (assq 'x-image-width header)))
+	      (setq h (cdr (assq 'x-image-height header)))
+	      (setq s (cdr (assq 'x-image-size header)))
+	      (if (and w h s)
+		  (navi2ch-thumbnail-image-prop-list-set url w h s)))
 	     (t (message "unable to get image property: %s" url)))
-	    (if (and width height size)
-		(insert (format " (thumb %sx%s:%sk)" width height (round (/ (string-to-number size) 1024)))))))
+;	    		(insert (format " (%sx%s:%sk%s)" w h s
+;			      (nth 0 image-attr)
+;			      (nth 1 image-attr)
+;			      (round (/ (nth 7 (file-attributes file)) 1024))
+;				(if (nth 2 image-attr) " GIF ANIME" "")))))
+
+	    (if (and w h s)
+		(insert (format " (thumb %sx%s:%sk)" w h (round (/ (string-to-number s) 1024)))))))
           
+;    (save-excursion
       (when (re-search-forward
 	   (concat "h?ttps?://\\([^ \t\n\r]+\\."
 		   (regexp-opt navi2ch-browse-url-image-extentions t)
 		   "\\)") nil t)
-	  (save-excursion
-	      (add-text-properties (match-beginning 0)(match-end 0) '(navi2ch-image-shown "shown")))
-	  (move-end-of-line nil))))))
+	(add-text-properties (match-beginning 0)(match-end 0) '(navi2ch-image-shown "shown")))
+      (move-end-of-line nil))))
+
+(defun navi2ch-thumbnail-set-url-shown ()
+  (when (re-search-forward
+	 (concat "h?ttps?://\\([^ \t\n\r]+\\."
+		 (regexp-opt navi2ch-browse-url-image-extentions t)
+		 "\\)") nil t)
+    (add-text-properties (match-beginning 0)(match-end 0) '(navi2ch-image-shown t)))
+  (move-end-of-line nil))
 
 (defun navi2ch-thumbnail-appspot-insert-thumbnail (url)
   (navi2ch-thumbnail-process-count-up)
   (let* ((file (navi2ch-thumbnail-url-to-file url))
 	 (w (number-to-string navi2ch-thumbnail-thumbsize-width))
-	 (h (number-to-string navi2ch-thumbnail-thumbsize-height))
-	 (url-appspot (concat "http://thumbmake.appspot.com/main?url=" url "&w=" w "&h=" h))
-	 proc)
+	 (h (number-to-string navi2ch-thumbnail-thumbsize-height)))
     (message "appspot call: %s" url)
-;    (setq url-appspot-escape (concat "http://thumbmake.appspot.com/main?url^=" url "^&w=" w "^&h=" h))
-;    (message "%s %s %s %s %s" "http://thumbmake.appspot.com/main" url w h thumb-file)
-    (setq proc 
-          (start-process (concat "curl-get-image|" url "|" (buffer-name) "|" (number-to-string (point)))
-                         "curl-get-image" appspot.sh "http://thumbmake.appspot.com/main"
-;                         "curl-get-image" (expand-file-name appspot.sh navi2ch-top-directory) "http://thumbmake.appspot.com/main"
-			 url w h (navi2ch-thumbnail-cygwin-to-win file)))
-;			 url w h (if (eq system-type 'cygwin) (cygwin-convert-file-name-to-windows thumb-file) thumb-file)))
-    (set-process-filter proc 'navi2ch-thumbnail-appspot-process-callback)))
+    (set-process-filter
+     (start-process (concat "curl-get-image|" url "|" (buffer-name) "|" (number-to-string (point)))
+		    "curl-get-image" (concat navi2ch-thumbnail-script-dir navi2ch-thumbnail-appspot-script) "http://thumbmake.appspot.com/main"
+		    url w h (navi2ch-thumbnail-cygwin-to-win file))
+     'navi2ch-thumbnail-appspot-process-callback)))
 
 (defun navi2ch-thumbnail-appspot-process-callback (proc result)
   (navi2ch-thumbnail-process-count-down)
@@ -772,26 +791,24 @@
 	 (start-index (string-match "curl-get-image|\\(http.+\\)|\\(.+\\)|\\(.+\\)$" pn))
 	 (url (match-string 1 pn))
 	 (bufname (match-string 2 pn))
-	 (pointnum (match-string 3 pn))
+	 (pointnum (string-to-number (match-string 3 pn)))
 	 (replaced-id (replace-regexp-in-string "-" "\-" (nth 1 (split-string url ":"))))
-;	 (replaced-id (replace-regexp-in-string "-" "\-" replaced-id))
 	 (result (replace-regexp-in-string  "\n+$" "" result))
-	 (local-file (concat (navi2ch-thumbnail-url-to-file url) ".jpg"))
+	 (thumb (concat (navi2ch-thumbnail-url-to-file url) ".jpg"))
 	 w h s)
     (cond ((string-match "^zero.+" result)
 	   (message "appspot callback abort:%s" result))
-	  ((and (file-exists-p local-file) (= (nth 7 (file-attributes local-file)) 0))
-	   (message "file emtpy: %s" local-file)
-	   (delete-file local-file))
+	  ((and (file-exists-p thumb) (= (nth 7 (file-attributes thumb)) 0))
+	   (message "file empty: %s" thumb)
+	   (delete-file thumb))
 	  (t 
 	   (message "appspot callback:%s" (replace-regexp-in-string  "\n+$" "" result))
 	   (when (setq prop-list (navi2ch-thumbnail-header-file-read (concat (navi2ch-thumbnail-url-to-file url) ".header")))
-;	     (setq link (nth 0 prop-list))
 	     (setq w (nth 0 prop-list))
 	     (setq h (nth 1 prop-list)) 
 	     (setq s (nth 2 prop-list)))
 	   ;; (with-temp-buffer
-	   ;;   (insert-file-contents (concat local-file ".header"))
+	   ;;   (insert-file-contents (concat thumb ".header"))
 	   ;;   (goto-char (point-min))
 	   ;;   (while (re-search-forward "X-IMAGE-WIDTH: \\([0-9]+\\)" nil t)
 	   ;;     (setq w (match-string 1)))
@@ -802,15 +819,18 @@
 	   ;;   (while (re-search-forward "X-IMAGE-SIZE: \\([0-9]+\\)" nil t)
 	   ;;     (setq s (match-string 1))))
      
-	   (when (file-exists-p local-file)
-	     (save-excursion
+	   (when (file-exists-p thumb)
 	       (with-current-buffer (set-buffer bufname)
-		 (let ((buffer-read-only nil))
+	     (save-excursion
+		 (when (and w h s)
+		   (navi2ch-thumbnail-image-prop-list-set url w h s))
+;		 (let ((buffer-read-only nil))
+;		   (goto-char pointnum)
 		   (goto-char 1)
 		   (re-search-forward replaced-id)
-		   (navi2ch-thumbnail-insert-image w h s url local-file)
-		   (when (and w h s)
-		     (navi2ch-thumbnail-image-prop-list-set url w h s))))))))))
+		   (navi2ch-thumbnail-insert-image w h s url thumb)
+		   )))))))
+					;)
 
 (defun navi2ch-thumbnail-header-file-read (header-file)
   (with-temp-buffer
@@ -872,3 +892,6 @@
            (concat file ".jpg"))
           (t
            file))))
+
+(provide 'navi2ch-thumbnail-new)
+
